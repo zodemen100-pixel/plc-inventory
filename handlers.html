@@ -9,10 +9,11 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <div class="logo"><i class="fas fa-microchip"></i><span class="logo-text">PLC 재고관리</span></div>
-    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+    <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
   </div>
   <ul class="sidebar-menu">
     <li class="menu-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i><span>대시보드</span></a></li>
@@ -27,57 +28,70 @@
 </nav>
 <main class="main-content" id="mainContent">
   <header class="topbar">
-    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
-  <i class="fas fa-bars"></i>
-</button>
+    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     <div class="topbar-title"><h1><i class="fas fa-users"></i> 담당자 관리</h1></div>
     <div class="topbar-actions">
       <span class="date-badge" id="currentDate"></span>
-      <button class="btn btn-primary" id="addHandlerBtn"><i class="fas fa-plus"></i> 담당자 추가</button>
+      <button class="btn btn-success" onclick="openAddModal()"><i class="fas fa-plus"></i> 담당자 추가</button>
     </div>
   </header>
   <div class="content-area">
     <div class="card">
       <div class="card-header">
-        <h2><i class="fas fa-users text-primary"></i> 담당자 목록</h2>
-        <span id="handlerCount" class="badge badge-secondary">-</span>
+        <h2><i class="fas fa-users"></i> 담당자 목록</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadHandlers()"><i class="fas fa-sync"></i></button>
       </div>
       <div class="card-body">
-        <div class="handler-grid" id="handlerGrid"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div></div>
+        <div id="handlerGrid" class="handler-grid">
+          <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+        </div>
       </div>
     </div>
   </div>
 </main>
 
-<!-- 담당자 추가/수정 모달 -->
+<!-- 담당자 모달 -->
 <div class="modal-overlay" id="handlerModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header"><h3 id="handlerModalTitle"><i class="fas fa-user-plus"></i> 담당자 추가</h3><button class="modal-close" id="closeHandlerModal"><i class="fas fa-times"></i></button></div>
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h3 id="handlerModalTitle"><i class="fas fa-user-plus"></i> 담당자 추가</h3>
+      <button class="modal-close" onclick="closeOverlay('handlerModal')"><i class="fas fa-times"></i></button>
+    </div>
     <div class="modal-body">
-      <div class="form-group"><label>이름 <span class="required">*</span></label><input type="text" id="handlerName" class="form-control" placeholder="예) 홍길동"></div>
-      <div class="form-group"><label>부서</label><input type="text" id="handlerDept" class="form-control" placeholder="예) 생산팀, 자재팀"></div>
-      <div class="form-group"><label>연락처</label><input type="text" id="handlerContact" class="form-control" placeholder="예) 010-1234-5678"></div>
-      <div class="form-group"><label>정렬 순서</label><input type="number" id="handlerOrder" class="form-control" value="0" min="0"></div>
+      <input type="hidden" id="handlerId">
+      <div class="form-group">
+        <label>이름 <span class="required">*</span></label>
+        <input type="text" id="handlerName" class="form-control" placeholder="담당자 이름">
+      </div>
+      <div class="form-group">
+        <label>부서</label>
+        <input type="text" id="handlerDept" class="form-control" placeholder="예: 생산팀">
+      </div>
+      <div class="form-group">
+        <label>연락처</label>
+        <input type="text" id="handlerContact" class="form-control" placeholder="예: 010-0000-0000">
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="cancelHandlerModal" style="color:#666;border-color:#ddd">취소</button>
-      <button class="btn btn-primary" id="saveHandlerBtn"><i class="fas fa-save"></i> 저장</button>
+      <button class="btn btn-outline" onclick="closeOverlay('handlerModal')">취소</button>
+      <button class="btn btn-success" onclick="saveHandler()"><i class="fas fa-save"></i> 저장</button>
     </div>
   </div>
 </div>
 
-<!-- 담당자 삭제 모달 -->
-<div class="modal-overlay" id="handlerDeleteModal">
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="deleteModal">
   <div class="modal" style="max-width:400px">
-    <div class="modal-header"><h3 style="color:#f44336"><i class="fas fa-exclamation-triangle"></i> 담당자 삭제</h3><button class="modal-close" id="closeHandlerDeleteModal"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body" style="text-align:center;padding:28px">
-      <i class="fas fa-user-times" style="font-size:2.8rem;color:#ffcccc;display:block;margin-bottom:14px"></i>
-      <p id="handlerDeleteText" style="font-size:1rem;color:#333;margin-bottom:8px"></p>
-      <p style="color:#888;font-size:.85rem">삭제 후 복구가 어렵습니다.</p>
+    <div class="modal-header">
+      <h3><i class="fas fa-trash"></i> 담당자 삭제</h3>
+      <button class="modal-close" onclick="closeOverlay('deleteModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="deleteMsg" style="text-align:center;padding:20px 0"></p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="cancelHandlerDelete" style="color:#666;border-color:#ddd">취소</button>
-      <button class="btn btn-danger" id="confirmHandlerDelete"><i class="fas fa-trash"></i> 삭제</button>
+      <button class="btn btn-outline" onclick="closeOverlay('deleteModal')">취소</button>
+      <button class="btn btn-danger" onclick="confirmDelete()"><i class="fas fa-trash"></i> 삭제</button>
     </div>
   </div>
 </div>
@@ -86,7 +100,4 @@
 <script src="js/common.js"></script>
 <script src="js/handlers.js"></script>
 </body>
-<body>
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>  ← 이 줄 추가
-<nav class="sidebar" id="sidebar">
 </html>
