@@ -277,6 +277,16 @@ async function stopCamera() {
    ================================================ */
 
 function openRegisterModal(bc) {
+document.body.appendChild(modal);
+
+// 🔥👇 여기부터 붙여넣기
+loadMainCategories();
+
+document.getElementById('qrMatCategoryMain')
+  ?.addEventListener('change', e => {
+    loadSubCategories(e.target.value);
+  });
+// 🔥👆 여기까지
   // 기존 모달 제거
   document.getElementById('quickRegModal')?.remove();
 
@@ -323,8 +333,17 @@ function openRegisterModal(bc) {
   <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
     카테고리 <span style="color:#e53e3e;">*</span>
   </label>
-  <select id="qrMatCategory" class="form-control">
-    <option value="">-- 카테고리 선택 --</option>
+  <div style="margin-bottom:12px;">
+  <label>카테고리 (대분류)</label>
+  <select id="qrMatCategoryMain" class="form-control">
+    <option value="">-- 대분류 선택 --</option>
+  </select>
+</div>
+
+<div style="margin-bottom:12px;">
+  <label>카테고리 (중분류)</label>
+  <select id="qrMatCategorySub" class="form-control">
+    <option value="">-- 중분류 선택 --</option>
   </select>
 </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
@@ -503,4 +522,29 @@ async function saveQuickRegister(bc) {
     console.error(e);
     showToast('등록 실패: ' + e.message, 'error');
   }
+}
+async function loadMainCategories() {
+  const cats = await CategoryAPI.getAll();
+
+  const mainSet = [...new Set(cats.map(c => c.main))];
+
+  const sel = document.getElementById('qrMatCategoryMain');
+
+  sel.innerHTML =
+    '<option value="">-- 대분류 선택 --</option>' +
+    mainSet.map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+async function loadSubCategories(main) {
+  const cats = await CategoryAPI.getAll();
+
+  const subList = cats
+    .filter(c => c.main === main)
+    .map(c => c.sub);
+
+  const sel = document.getElementById('qrMatCategorySub');
+
+  sel.innerHTML =
+    '<option value="">-- 중분류 선택 --</option>' +
+    subList.map(s => `<option value="${s}">${s}</option>`).join('');
 }
