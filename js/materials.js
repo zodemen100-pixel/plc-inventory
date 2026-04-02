@@ -4,6 +4,7 @@
 
 let allMaterials = [];
 let editingId    = null;
+let catTree      = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadMaterials();
@@ -15,14 +16,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadMaterials() {
   const tbody = document.getElementById('materialsTableBody');
   if (tbody) tbody.innerHTML =
-    `<tr><td colspan="9" class="text-center"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
+    `<tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
+      <i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
   try {
     allMaterials = await MaterialAPI.getAll();
     await populateFilterCategory();
     applyFilter();
   } catch (e) {
     if (tbody) tbody.innerHTML =
-      `<tr><td colspan="9" class="text-center" style="color:red;"><i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
+      `<tr><td colspan="9" style="text-align:center;padding:40px;color:red;">
+        <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
   }
 }
 
@@ -38,8 +41,8 @@ function applyFilter() {
     (m.model||'').toLowerCase().includes(kw) ||
     (m.series||'').toLowerCase().includes(kw) ||
     (m.version||'').toLowerCase().includes(kw));
-  if (cat) list = list.filter(m => (m.category||'') === cat);
-  if (st)  list = list.filter(m => getStockStatus(m).key === st);
+  if (cat) list = list.filter(m => (m.category||'').includes(cat));
+  if (st)  list = list.filter(m => getStockStatus(m) === st);
   renderTable(list);
 }
 
@@ -52,11 +55,18 @@ function renderTable(list) {
 
   if (!list.length) {
     tbody.innerHTML =
-      `<tr><td colspan="9" class="text-center text-muted"><i class="fas fa-inbox"></i> 등록된 자재가 없습니다.</td></tr>`;
+      `<tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
+        <i class="fas fa-inbox"></i> 등록된 자재가 없습니다.</td></tr>`;
     return;
   }
+
   tbody.innerHTML = list.map(m => {
-    const s = getStockStatus(m);
+    const st = getStockStatus(m);
+    const badgeMap = {
+      ok:       '<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">정상</span>',
+      low:      '<span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">부족</span>',
+      critical: '<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">재고없음</span>'
+    };
     return `<tr>
       <td><strong>${esc(m.name)}</strong></td>
       <td>${esc(m.model   ||'-')}</td>
@@ -64,9 +74,11 @@ function renderTable(list) {
       <td>${esc(m.version ||'-')}</td>
       <td>${esc(m.category||'-')}</td>
       <td>${esc(m.manager ||'-')}</td>
-      <td class="text-center"><strong>${m.current_stock??0}</strong>
-        <small style="color:#888;"> ${esc(m.unit||'EA')}</small></td>
-      <td>${statusBadgeHTML(s)}</td>
+      <td style="text-align:center;">
+        <strong>${m.current_stock??0}</strong>
+        <small style="color:#888;"> ${esc(m.unit||'EA')}</small>
+      </td>
+      <td>${badgeMap[st] || badgeMap.ok}</td>
       <td>
         <div class="btn-group">
           <button class="btn btn-sm btn-outline" onclick="showBarcode('${m.id}')" title="바코드">
@@ -92,34 +104,87 @@ async function populateFilterCategory() {
   });
 }
 
-/* ── 모달 카테고리 ── */
-async function loadCategoryOptions() {
+/* ── 카테고리 3단계 로드 ── */
+async function loadCatTree() {
   try {
-    const sel = document.getElementById('matCategory');
-    if (!sel) return;
-    const tree = await CategoryAPI.getTree();
-    sel.innerHTML = '<option value="">-- 선택 --</option>';
-    tree.forEach(l1 => {
-      (l1.children||[]).forEach(l2 => {
-        (l2.children||[]).forEach(l3 => {
-          const o = document.createElement('option');
-          o.value = l3.name;
-          o.textContent = `${l1.name} > ${l2.name} > ${l3.name}`;
-          sel.appendChild(o);
-        });
-        if (!(l2.children?.length)) {
-          const o = document.createElement('option');
-          o.value = l2.name;
-          o.textContent = `${l1.name} > ${l2.name}`;
-          sel.appendChild(o);
-        }
-      });
-      if (!(l1.children?.length)) {
-        const o = document.createElement('option');
-        o.value = l1.name; o.textContent = l1.name; sel.appendChild(o);
-      }
+    catTree = await CategoryAPI.getTree();
+    const l1Sel = document.getElementById('catL1');
+    if (!l1Sel) return;
+    l1Sel.innerHTML = '<option value="">대분류 선택</option>';
+    catTree.forEach(l1 => {
+      const o = document.createElement('option');
+      o.value = l1.id; o.textContent = l1.name;
+      l1Sel.appendChild(o);
     });
+    document.getElementById('catL2').innerHTML = '<option value="">중분류</option>';
+    document.getElementById('catL2').disabled = true;
+    document.getElementById('catL3').innerHTML = '<option value="">소분류</option>';
+    document.getElementById('catL3').disabled = true;
+    document.getElementById('matCategory').value = '';
   } catch(_) {}
+}
+
+function onCatL1Change() {
+  const l1Id  = document.getElementById('catL1').value;
+  const l2Sel = document.getElementById('catL2');
+  const l3Sel = document.getElementById('catL3');
+
+  l2Sel.innerHTML = '<option value="">중분류 선택</option>';
+  l3Sel.innerHTML = '<option value="">소분류</option>';
+  l3Sel.disabled  = true;
+  document.getElementById('matCategory').value = '';
+
+  if (!l1Id) { l2Sel.disabled = true; return; }
+
+  const l1Node = catTree.find(x => x.id === l1Id);
+  if (!l1Node?.children?.length) {
+    l2Sel.disabled = true;
+    document.getElementById('matCategory').value = l1Node?.name || '';
+    return;
+  }
+  l2Sel.disabled = false;
+  l1Node.children.forEach(l2 => {
+    const o = document.createElement('option');
+    o.value = l2.id; o.textContent = l2.name;
+    l2Sel.appendChild(o);
+  });
+}
+
+function onCatL2Change() {
+  const l1Id  = document.getElementById('catL1').value;
+  const l2Id  = document.getElementById('catL2').value;
+  const l3Sel = document.getElementById('catL3');
+
+  l3Sel.innerHTML = '<option value="">소분류 선택</option>';
+  document.getElementById('matCategory').value = '';
+
+  if (!l2Id) { l3Sel.disabled = true; return; }
+
+  const l1Node = catTree.find(x => x.id === l1Id);
+  const l2Node = l1Node?.children?.find(x => x.id === l2Id);
+
+  if (!l2Node?.children?.length) {
+    l3Sel.disabled = true;
+    document.getElementById('matCategory').value = l2Node?.name || '';
+    return;
+  }
+  l3Sel.disabled = false;
+  l2Node.children.forEach(l3 => {
+    const o = document.createElement('option');
+    o.value = l3.id; o.textContent = l3.name;
+    l3Sel.appendChild(o);
+  });
+}
+
+function onCatL3Change() {
+  const l1Id = document.getElementById('catL1').value;
+  const l2Id = document.getElementById('catL2').value;
+  const l3Id = document.getElementById('catL3').value;
+  if (!l3Id) { document.getElementById('matCategory').value = ''; return; }
+  const l1Node = catTree.find(x => x.id === l1Id);
+  const l2Node = l1Node?.children?.find(x => x.id === l2Id);
+  const l3Node = l2Node?.children?.find(x => x.id === l3Id);
+  document.getElementById('matCategory').value = l3Node?.name || '';
 }
 
 /* ── 담당자 옵션 ── */
@@ -138,6 +203,46 @@ async function loadHandlerOptions() {
   } catch(_) {}
 }
 
+/* ── 수정 시 카테고리 복원 ── */
+function restoreCategory(catName) {
+  if (!catName || !catTree.length) return;
+  for (const l1 of catTree) {
+    if (l1.name === catName) {
+      document.getElementById('catL1').value = l1.id;
+      onCatL1Change();
+      document.getElementById('matCategory').value = catName;
+      return;
+    }
+    for (const l2 of (l1.children||[])) {
+      if (l2.name === catName) {
+        document.getElementById('catL1').value = l1.id;
+        onCatL1Change();
+        setTimeout(() => {
+          document.getElementById('catL2').value = l2.id;
+          onCatL2Change();
+          document.getElementById('matCategory').value = catName;
+        }, 50);
+        return;
+      }
+      for (const l3 of (l2.children||[])) {
+        if (l3.name === catName) {
+          document.getElementById('catL1').value = l1.id;
+          onCatL1Change();
+          setTimeout(() => {
+            document.getElementById('catL2').value = l2.id;
+            onCatL2Change();
+            setTimeout(() => {
+              document.getElementById('catL3').value = l3.id;
+              onCatL3Change();
+            }, 50);
+          }, 50);
+          return;
+        }
+      }
+    }
+  }
+}
+
 /* ── 모달 열기 ── */
 async function openModal(id = null) {
   editingId = id;
@@ -154,8 +259,9 @@ async function openModal(id = null) {
   document.getElementById('matUnit').value     = 'EA';
   document.getElementById('matBarcode').value  = '';
   document.getElementById('matNote').value     = '';
+  document.getElementById('matCategory').value = '';
 
-  await loadCategoryOptions();
+  await loadCatTree();
   await loadHandlerOptions();
 
   if (id) {
@@ -175,11 +281,10 @@ async function openModal(id = null) {
       document.getElementById('matBarcode').value  = m.barcode || '';
       document.getElementById('matNote').value     = m.description || '';
       setTimeout(() => {
-        const cs = document.getElementById('matCategory');
-        if (cs) cs.value = m.category || '';
+        restoreCategory(m.category);
         const ms = document.getElementById('matManager');
         if (ms) ms.value = m.manager || '';
-      }, 150);
+      }, 200);
     }
   } else {
     document.getElementById('modalTitle').innerHTML =
@@ -193,12 +298,6 @@ async function openModal(id = null) {
 function closeModal() {
   document.getElementById('materialModal').classList.remove('open');
   editingId = null;
-}
-
-/* ── 오버레이 클릭 닫기 ── */
-function handleOverlayClick(e, id) {
-  if (e.target.id === id)
-    document.getElementById(id).classList.remove('open');
 }
 
 /* ── 바코드 자동생성 ── */
@@ -225,9 +324,9 @@ async function saveMaterial() {
     version         : document.getElementById('matVersion').value.trim(),
     manufacture_date: document.getElementById('matMfgDate').value || null,
     category        : document.getElementById('matCategory').value,
-    current_stock   : parseInt(document.getElementById('matStock').value)    || 0,
-    min_stock       : parseInt(document.getElementById('matMinStock').value)  || 0,
-    unit            : document.getElementById('matUnit').value.trim()         || 'EA',
+    current_stock   : parseInt(document.getElementById('matStock').value)   || 0,
+    min_stock       : parseInt(document.getElementById('matMinStock').value) || 0,
+    unit            : document.getElementById('matUnit').value.trim()        || 'EA',
     manager         : document.getElementById('matManager').value,
     barcode         : document.getElementById('matBarcode').value.trim(),
     description     : document.getElementById('matNote').value.trim(),
@@ -280,8 +379,10 @@ function printBarcode() {
   const val  = document.getElementById('bcValue').textContent;
   const w    = window.open('','_blank','width=420,height=320');
   w.document.write(`<!DOCTYPE html><html><head><title>바코드 인쇄</title>
-    <style>body{text-align:center;font-family:sans-serif;padding:24px;}p{margin:6px 0;font-size:14px;}</style></head>
+    <style>body{text-align:center;font-family:sans-serif;padding:24px;}
+    p{margin:6px 0;font-size:14px;}</style></head>
     <body><p><strong>${name}</strong></p>${svg}<p>${val}</p>
-    <script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
+    <script>window.onload=()=>{window.print();window.close();}<\/script>
+    </body></html>`);
   w.document.close();
 }

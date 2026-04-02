@@ -7,6 +7,250 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* 자재관리 페이지 전용 */
+    .page-content { padding: 24px; }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .filter-bar .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+    .filter-bar .search-wrap i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+    }
+    .filter-bar .search-wrap input {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Noto Sans KR', sans-serif;
+      outline: none;
+    }
+    .filter-bar .search-wrap input:focus { border-color: var(--primary); }
+    .filter-bar select {
+      padding: 9px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #fff;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      background: var(--primary);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .table th {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #555;
+      border-bottom: 2px solid #eee;
+      white-space: nowrap;
+    }
+    .table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      vertical-align: middle;
+    }
+    .table tr:hover td { background: #f9fbff; }
+    .table tr:last-child td { border-bottom: none; }
+
+    .btn-group { display: flex; gap: 6px; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+    /* 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #1e3a5f, #2d6a9f);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-close-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0;
+    }
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+      background: #fff;
+    }
+
+    /* 모달 섹션 */
+    .msec {
+      padding: 18px 24px;
+      border-bottom: 1px solid #eee;
+    }
+    .msec:last-child { border-bottom: none; }
+    .msec.bg { background: #f8f9fc; }
+    .msec-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2d6a9f;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .msec label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 5px;
+    }
+    .msec label .req { color: #e53e3e; }
+    .msec .form-control {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Noto Sans KR', sans-serif;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color .2s;
+    }
+    .msec .form-control:focus { border-color: #2d6a9f; }
+    .msec .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .msec .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .msec .row { margin-bottom: 12px; }
+    .msec .row:last-child { margin-bottom: 0; }
+    .msec .flex-row { display: flex; gap: 8px; align-items: center; }
+    .msec .flex-row .form-control { flex: 1; }
+
+    /* 카테고리 선택 - 3단계 */
+    .cat-select-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .cat-select-wrap select {
+      padding: 9px 8px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #fff;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .cat-select-wrap select:focus { border-color: #2d6a9f; }
+    .cat-label {
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 600px) {
+      .msec .grid2 { grid-template-columns: 1fr; }
+      .msec .grid3 { grid-template-columns: 1fr 1fr; }
+      .cat-select-wrap { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -44,158 +288,162 @@
     </header>
 
     <div class="page-content">
+
+      <!-- 필터 바 -->
       <div class="filter-bar">
         <div class="search-wrap">
           <i class="fas fa-search"></i>
           <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈, 버전 검색..."/>
         </div>
-        <select id="filterCategory" class="form-select" onchange="applyFilter()">
+        <select id="filterCategory" onchange="applyFilter()">
           <option value="">전체 카테고리</option>
         </select>
-        <select id="filterStatus" class="form-select" onchange="applyFilter()">
+        <select id="filterStatus" onchange="applyFilter()">
           <option value="">전체 상태</option>
-          <option value="normal">정상</option>
+          <option value="ok">정상</option>
           <option value="low">부족</option>
-          <option value="out">재고없음</option>
+          <option value="critical">재고없음</option>
         </select>
         <button class="btn btn-primary" onclick="openModal()">
           <i class="fas fa-plus"></i> 자재 등록
         </button>
       </div>
 
+      <!-- 자재 목록 -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title"><i class="fas fa-list"></i> 자재 목록</h3>
           <span class="badge" id="totalCount">0건</span>
         </div>
-        <div class="card-body p-0">
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>자재명</th>
-                  <th>모델</th>
-                  <th>시리즈</th>
-                  <th>버전</th>
-                  <th>카테고리</th>
-                  <th>담당자</th>
-                  <th>재고</th>
-                  <th>상태</th>
-                  <th>작업</th>
-                </tr>
-              </thead>
-              <tbody id="materialsTableBody">
-                <tr><td colspan="9" class="text-center">
-                  <i class="fas fa-spinner fa-spin"></i> 불러오는 중...
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>자재명</th>
+                <th>모델</th>
+                <th>시리즈</th>
+                <th>버전</th>
+                <th>카테고리</th>
+                <th>담당자</th>
+                <th>재고</th>
+                <th>상태</th>
+                <th>작업</th>
+              </tr>
+            </thead>
+            <tbody id="materialsTableBody">
+              <tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
+                <i class="fas fa-spinner fa-spin"></i> 불러오는 중...
+              </td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
 <!-- ===== 자재 등록/수정 모달 ===== -->
 <div class="modal-overlay" id="materialModal">
-  <div class="modal" style="max-width:600px;border-radius:16px;overflow:hidden;">
+  <div class="modal">
 
-    <div class="modal-header" style="background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;padding:18px 24px;">
-      <h3 id="modalTitle" style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-plus-circle"></i> 자재 등록
-      </h3>
-      <button onclick="closeModal()"
-        style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">
+    <div class="modal-header">
+      <h3 id="modalTitle"><i class="fas fa-plus-circle"></i> 자재 등록</h3>
+      <button class="modal-close-btn" onclick="closeModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
 
-    <div class="modal-body" style="padding:0;max-height:70vh;overflow-y:auto;">
+    <div class="modal-body">
       <input type="hidden" id="matId"/>
 
       <!-- 기본 정보 -->
-      <div style="padding:18px 24px;border-bottom:1px solid #eee;">
-        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
-          <i class="fas fa-info-circle"></i> 기본 정보
-        </div>
-        <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
-            자재명 <span style="color:#e53e3e;">*</span>
-          </label>
+      <div class="msec">
+        <div class="msec-title"><i class="fas fa-info-circle"></i> 기본 정보</div>
+        <div class="row">
+          <label>자재명 <span class="req">*</span></label>
           <input type="text" class="form-control" id="matName" placeholder="예) SIMATIC S7-1200 CPU 1214C"/>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="grid2 row">
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">모델</label>
+            <label>모델</label>
             <input type="text" class="form-control" id="matModel" placeholder="예) CPU 1214C"/>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">시리즈</label>
+            <label>시리즈</label>
             <input type="text" class="form-control" id="matSeries" placeholder="예) S7-1200"/>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="grid2">
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">버전</label>
+            <label>버전</label>
             <input type="text" class="form-control" id="matVersion" placeholder="예) V4.5"/>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">제조일자</label>
+            <label>제조일자</label>
             <input type="date" class="form-control" id="matMfgDate"/>
           </div>
         </div>
       </div>
 
-      <!-- 분류 / 담당 -->
-      <div style="padding:18px 24px;border-bottom:1px solid #eee;background:#f8f9fa;">
-        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
-          <i class="fas fa-tag"></i> 분류 / 담당
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <!-- 카테고리 3단계 -->
+      <div class="msec bg">
+        <div class="msec-title"><i class="fas fa-sitemap"></i> 카테고리</div>
+        <div class="cat-select-wrap">
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">카테고리</label>
-            <select class="form-control" id="matCategory">
-              <option value="">-- 선택 --</option>
+            <select id="catL1" onchange="onCatL1Change()">
+              <option value="">대분류</option>
             </select>
+            <div class="cat-label">대분류</div>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">담당자</label>
-            <select class="form-control" id="matManager">
-              <option value="">-- 선택 --</option>
+            <select id="catL2" onchange="onCatL2Change()" disabled>
+              <option value="">중분류</option>
             </select>
+            <div class="cat-label">중분류</div>
+          </div>
+          <div>
+            <select id="catL3" onchange="onCatL3Change()" disabled>
+              <option value="">소분류</option>
+            </select>
+            <div class="cat-label">소분류</div>
           </div>
         </div>
+        <input type="hidden" id="matCategory"/>
+      </div>
+
+      <!-- 담당자 -->
+      <div class="msec">
+        <div class="msec-title"><i class="fas fa-user"></i> 담당자</div>
+        <select class="form-control" id="matManager">
+          <option value="">-- 선택 --</option>
+        </select>
       </div>
 
       <!-- 재고 정보 -->
-      <div style="padding:18px 24px;border-bottom:1px solid #eee;">
-        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
-          <i class="fas fa-cubes"></i> 재고 정보
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div class="msec bg">
+        <div class="msec-title"><i class="fas fa-cubes"></i> 재고 정보</div>
+        <div class="grid3">
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">현재 재고</label>
+            <label>현재 재고</label>
             <input type="number" class="form-control" id="matStock" value="0" min="0"/>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">최소 재고</label>
+            <label>최소 재고</label>
             <input type="number" class="form-control" id="matMinStock" value="0" min="0"/>
           </div>
           <div>
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">단위</label>
+            <label>단위</label>
             <input type="text" class="form-control" id="matUnit" value="EA"/>
           </div>
         </div>
       </div>
 
       <!-- 바코드 -->
-      <div style="padding:18px 24px;border-bottom:1px solid #eee;background:#f8f9fa;">
-        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
-          <i class="fas fa-barcode"></i> 바코드
-        </div>
-        <div style="display:flex;gap:8px;">
-          <input type="text" class="form-control" id="matBarcode" placeholder="자동생성 또는 직접입력" style="flex:1;"/>
+      <div class="msec">
+        <div class="msec-title"><i class="fas fa-barcode"></i> 바코드</div>
+        <div class="flex-row">
+          <input type="text" class="form-control" id="matBarcode" placeholder="자동생성 또는 직접입력"/>
           <button type="button" class="btn btn-outline" onclick="genBarcode()" style="white-space:nowrap;">
             <i class="fas fa-sync-alt"></i> 자동생성
           </button>
@@ -203,16 +451,14 @@
       </div>
 
       <!-- 비고 -->
-      <div style="padding:18px 24px;">
-        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">
-          <i class="fas fa-sticky-note"></i> 비고
-        </div>
+      <div class="msec bg">
+        <div class="msec-title"><i class="fas fa-sticky-note"></i> 비고</div>
         <textarea class="form-control" id="matNote" rows="2" placeholder="추가 메모 사항" style="resize:vertical;"></textarea>
       </div>
 
     </div>
 
-    <div class="modal-footer" style="padding:14px 24px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;">
+    <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">
         <i class="fas fa-times"></i> 취소
       </button>
@@ -229,9 +475,9 @@
   <div class="modal" style="max-width:400px;text-align:center;">
     <div class="modal-header">
       <h3><i class="fas fa-barcode"></i> 바코드 미리보기</h3>
-      <button class="modal-close" onclick="closeBarcode()"><i class="fas fa-times"></i></button>
+      <button class="modal-close-btn" onclick="closeBarcode()"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="padding:24px;">
       <p id="bcMatName" style="font-weight:600;font-size:15px;margin-bottom:16px;"></p>
       <svg id="bcSvg"></svg>
       <p id="bcValue" style="margin-top:10px;font-size:13px;color:#888;"></p>
