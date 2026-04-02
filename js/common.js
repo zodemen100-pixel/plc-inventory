@@ -43,15 +43,24 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   if (!sidebar) return;
-
   if (window.innerWidth <= 768) {
     sidebar.classList.toggle('mobile-open');
     if (overlay) overlay.classList.toggle('open');
   } else {
     sidebar.classList.toggle('collapsed');
-    document.getElementById('mainContent')?.classList.toggle('expanded');
   }
 }
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (overlay) overlay.classList.remove('open');
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) closeSidebar();
+});
 
 function closeSidebar() {
   const sidebar = document.getElementById('sidebar');
