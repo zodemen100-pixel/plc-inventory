@@ -95,6 +95,38 @@
       </div>
     </div>
 
+<!-- 엑셀/수동등록 버튼 -->
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <button class="btn btn-outline" onclick="exportMaterialsExcel()">
+    <i class="fas fa-file-excel" style="color:#217346"></i> 자재목록 엑셀
+  </button>
+  <button class="btn btn-outline" onclick="exportTransactionsExcel()">
+    <i class="fas fa-file-excel" style="color:#217346"></i> 입출고 엑셀
+  </button>
+  <button class="btn btn-outline" onclick="importMaterialsExcel()">
+    <i class="fas fa-file-upload" style="color:#1565c0"></i> 엑셀 가져오기
+  </button>
+  <button class="btn btn-outline" onclick="openManualTxModal()">
+    <i class="fas fa-edit" style="color:var(--warning)"></i> 수동 입출고
+  </button>
+  <button class="btn btn-outline" onclick="openLabelModal()">
+    <i class="fas fa-print" style="color:var(--primary)"></i> 라벨 출력
+  </button>
+</div>
+
+<!-- TOP 10 카드 -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header">
+    <h2><i class="fas fa-trophy" style="color:#f59e0b"></i> 자주 사용되는 자재 TOP 10</h2>
+    <button class="btn btn-outline btn-sm" onclick="loadTop10()"><i class="fas fa-sync"></i></button>
+  </div>
+  <div class="card-body">
+    <div id="top10List">
+      <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  </div>
+</div>
+
     <!-- 전체 재고 현황 -->
     <div class="card">
       <div class="card-header">
@@ -135,6 +167,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/common.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/label.js"></script>
+<script src="js/manual_tx.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>

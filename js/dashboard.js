@@ -110,3 +110,42 @@ function filterDashboardTable() {
   );
   renderDashTable(list);
 }
+// TOP 10 자주 사용 자재
+async function loadTop10() {
+  try {
+    const txList = await TransactionAPI.getAll(9999);
+    const countMap = {};
+    txList.forEach(t => {
+      if (!t.material_name) return;
+      countMap[t.material_name] = (countMap[t.material_name] || 0) + t.quantity;
+    });
+    const top10 = Object.entries(countMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    const wrap = document.getElementById('top10List');
+    if (!wrap) return;
+
+    if (!top10.length) {
+      wrap.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>입출고 이력이 없습니다</p></div>';
+      return;
+    }
+
+    const max = top10[0][1];
+    wrap.innerHTML = top10.map(([name, cnt], i) => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:24px;height:24px;border-radius:50%;background:${i < 3 ? 'var(--secondary)' : '#e9ecef'};
+          color:${i < 3 ? '#fff' : '#666'};display:flex;align-items:center;justify-content:center;
+          font-size:.75rem;font-weight:700;flex-shrink:0">${i + 1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(name)}</div>
+          <div style="background:#e9ecef;border-radius:4px;height:6px;margin-top:4px">
+            <div style="width:${Math.round(cnt / max * 100)}%;background:${i < 3 ? 'var(--secondary)' : 'var(--gray-400)'};
+              height:6px;border-radius:4px;transition:width .5s"></div>
+          </div>
+        </div>
+        <div style="font-size:.85rem;font-weight:700;color:var(--secondary);flex-shrink:0">${cnt}</div>
+      </div>
+    `).join('');
+  } catch (e) { console.error('TOP10 오류:', e); }
+}

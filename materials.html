@@ -63,7 +63,9 @@
     </div>
   </div>
 </main>
-
+<button class="btn btn-outline btn-sm" onclick="openLabelModal('${m.id}')">
+  <i class="fas fa-print"></i>
+</button>
 <!-- 자재 등록/수정 모달 -->
 <div class="modal-overlay" id="materialModal">
   <div class="modal" style="max-width:680px">
@@ -177,6 +179,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="js/common.js"></script>
+<script src="js/materials.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/label.js"></script>
+<script src="js/manual_tx.js"></script>
 <script src="js/materials.js"></script>
 </body>
 </html>
