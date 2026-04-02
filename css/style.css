@@ -371,3 +371,61 @@ textarea.form-control{resize:vertical}
   width: 100%;
   min-width: 800px;
 }
+/* ===== 전체 레이아웃 꽉 차게 강제 ===== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.app-layout {
+  display: flex !important;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar {
+  flex-shrink: 0;
+  width: 240px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.main-content {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  padding: 20px 24px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.filter-bar {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-bottom: 16px;
+}
+
+.table-wrap {
+  width: 100% !important;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100% !important;
+  table-layout: auto;
+}
