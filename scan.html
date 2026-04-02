@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>바코드 스캔 - PLC 재고관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><i class="fas fa-microchip"></i><span class="logo-text">PLC 재고관리</span></div>
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+  </div>
+  <ul class="sidebar-menu">
+    <li class="menu-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i><span>대시보드</span></a></li>
+    <li class="menu-item"><a href="materials.html"><i class="fas fa-boxes"></i><span>자재 관리</span></a></li>
+    <li class="menu-item active"><a href="scan.html"><i class="fas fa-barcode"></i><span>바코드 스캔</span></a></li>
+    <li class="menu-item"><a href="transactions.html"><i class="fas fa-exchange-alt"></i><span>입출고 이력</span></a></li>
+    <li class="menu-item"><a href="inventory.html"><i class="fas fa-clipboard-list"></i><span>재고 현황</span></a></li>
+    <li class="menu-item"><a href="categories.html"><i class="fas fa-sitemap"></i><span>카테고리 관리</span></a></li>
+    <li class="menu-item"><a href="handlers.html"><i class="fas fa-users"></i><span>담당자 관리</span></a></li>
+  </ul>
+  <div class="sidebar-footer"><span>v1.0.0</span></div>
+</nav>
+<main class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="topbar-title"><h1><i class="fas fa-barcode"></i> 바코드 / QR 스캔</h1></div>
+    <div class="topbar-actions"><span class="date-badge" id="currentDate"></span></div>
+  </header>
+  <div class="content-area">
+    <div class="scan-page-wrap">
+      <div class="scan-left">
+        <div class="scan-main-card">
+          <div class="scan-title"><i class="fas fa-exchange-alt"></i> 입출고 처리</div>
+          <div class="scan-mode-tabs">
+            <button class="scan-mode-btn in active" id="modeBtnIn" onclick="setMode('in')"><i class="fas fa-arrow-down"></i> 입고</button>
+            <button class="scan-mode-btn out" id="modeBtnOut" onclick="setMode('out')"><i class="fas fa-arrow-up"></i> 출고</button>
+          </div>
+          <div class="btn-group-scan">
+            <button class="btn btn-primary" style="flex:1;font-size:.95rem" id="startCameraBtn" onclick="toggleCamera()"><i class="fas fa-camera"></i> 카메라 스캔 (QR·바코드)</button>
+            <button class="btn btn-sm" style="background:#f0f0f0;color:#555" id="clearScanBtn"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="camera-wrapper" id="cameraWrapper">
+            <div class="scan-overlay-wrap"><div id="qr-reader"></div></div>
+            <div id="scanStatus" style="background:#1a1a2e;color:rgba(255,255,255,.65);text-align:center;font-size:.8rem;padding:8px 12px;min-height:32px;display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-spinner fa-spin"></i> 카메라 시작 중...
+            </div>
+          </div>
+          <div class="scan-input-area">
+            <i class="fas fa-keyboard scan-input-icon"></i>
+            <input type="text" id="barcodeInput" class="scan-big-input mode-in" placeholder="바코드를 직접 입력하거나 스캐너로 스캔..." autocomplete="off">
+          </div>
+          <div id="scanResultArea">
+            <div class="result-card">
+              <div style="text-align:center;color:#bbb;padding:24px 12px">
+                <i class="fas fa-barcode" style="font-size:2.2rem;display:block;margin-bottom:10px"></i>
+                <p style="font-size:.9rem">카메라 또는 스캐너로 바코드/QR을 스캔하세요</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scan-main-card" id="txDetailCard" style="display:none">
+          <div class="scan-title"><i class="fas fa-user-edit"></i> 처리 정보</div>
+          <div class="qty-area">
+            <label>수량</label>
+            <div class="qty-controls">
+              <button class="qty-btn" id="qtyMinus">−</button>
+              <input type="number" id="quantityInput" class="qty-input" value="1" min="1">
+              <button class="qty-btn" id="qtyPlus">+</button>
+              <span id="unitLabel" style="color:#888;font-weight:500;font-size:1rem">EA</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label style="font-size:.875rem;font-weight:700;color:#333">
+              <i class="fas fa-user" style="color:#f44336"></i> 담당자 <span class="required">*</span>
+              <span style="font-size:.73rem;color:#f44336;font-weight:400"> (필수)</span>
+            </label>
+            <div style="display:flex;gap:8px">
+              <select id="handlerSelect" class="form-control" style="flex:1"><option value="">-- 담당자 선택 (필수) --</option></select>
+              <a href="handlers.html" class="btn btn-sm btn-outline" title="담당자 관리"><i class="fas fa-cog"></i></a>
+            </div>
+          </div>
+          <div class="form-group">
+            <label style="font-size:.875rem;font-weight:600;color:#555">목적 / 비고</label>
+            <input type="text" id="noteInput" class="form-control" placeholder="예) 3호기 수리, 정기 입고 등">
+          </div>
+          <button id="submitBtn" style="width:100%;margin-top:10px;font-size:1rem;background:#4CAF50;color:#fff;border:none;border-radius:8px;padding:14px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s">
+            <i class="fas fa-arrow-down"></i><span id="submitBtnText">입고 처리</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="scan-right">
+        <div class="scan-main-card" style="flex:1">
+          <div class="scan-title" style="justify-content:space-between">
+            <span><i class="fas fa-history"></i> 오늘 스캔 이력</span>
+            <button class="btn btn-sm" style="background:#f0f0f0;color:#555;font-size:.8rem" id="clearHistoryBtn"><i class="fas fa-trash"></i> 지우기</button>
+          </div>
+          <div id="sessionHistory" class="scan-history">
+            <div style="text-align:center;padding:40px;color:#ccc">
+              <i class="fas fa-history" style="font-size:1.8rem;display:block;margin-bottom:10px"></i>
+              <p style="font-size:.85rem">스캔 이력이 없습니다</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="successOverlay"><i class="fas fa-check-circle"></i></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/scan.js"></script>
+</body>
+</html>

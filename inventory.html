@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>재고 현황 - PLC 재고관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><i class="fas fa-microchip"></i><span class="logo-text">PLC 재고관리</span></div>
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+  </div>
+  <ul class="sidebar-menu">
+    <li class="menu-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i><span>대시보드</span></a></li>
+    <li class="menu-item"><a href="materials.html"><i class="fas fa-boxes"></i><span>자재 관리</span></a></li>
+    <li class="menu-item"><a href="scan.html"><i class="fas fa-barcode"></i><span>바코드 스캔</span></a></li>
+    <li class="menu-item"><a href="transactions.html"><i class="fas fa-exchange-alt"></i><span>입출고 이력</span></a></li>
+    <li class="menu-item active"><a href="inventory.html"><i class="fas fa-clipboard-list"></i><span>재고 현황</span></a></li>
+    <li class="menu-item"><a href="categories.html"><i class="fas fa-sitemap"></i><span>카테고리 관리</span></a></li>
+    <li class="menu-item"><a href="handlers.html"><i class="fas fa-users"></i><span>담당자 관리</span></a></li>
+  </ul>
+  <div class="sidebar-footer"><span>v1.0.0</span></div>
+</nav>
+<main class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="topbar-title"><h1><i class="fas fa-clipboard-list"></i> 재고 현황</h1></div>
+    <div class="topbar-actions">
+      <span class="date-badge" id="currentDate"></span>
+      <button class="btn btn-primary" id="refreshBtn"><i class="fas fa-sync-alt"></i> 새로고침</button>
+    </div>
+  </header>
+  <div class="content-area">
+    <div class="stats-grid">
+      <div class="stat-card stat-total"><div class="stat-icon"><i class="fas fa-boxes"></i></div><div class="stat-info"><h3 id="invTotal">-</h3><p>전체 자재</p></div></div>
+      <div class="stat-card stat-in"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-info"><h3 id="invNormal">-</h3><p>정상 재고</p></div></div>
+      <div class="stat-card stat-out"><div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div><div class="stat-info"><h3 id="invLow">-</h3><p>재고 부족</p></div></div>
+      <div class="stat-card stat-warning"><div class="stat-icon"><i class="fas fa-times-circle"></i></div><div class="stat-info"><h3 id="invCritical">-</h3><p>재고 없음</p></div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="card"><div class="card-header"><h2><i class="fas fa-chart-bar text-primary"></i> 카테고리별 재고 현황</h2></div><div class="card-body"><div style="height:260px"><canvas id="stockChart"></canvas></div></div></div>
+      <div class="card"><div class="card-header"><h2><i class="fas fa-chart-pie text-warning"></i> 재고 상태 분포</h2></div><div class="card-body" style="display:flex;flex-direction:column;gap:12px"><div style="height:180px"><canvas id="statusChart"></canvas></div><div id="statusLegend" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:.85rem"></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2><i class="fas fa-bell text-danger"></i> 재고 부족 / 없음 알림</h2><span id="alertCount" class="badge badge-danger">0</span></div>
+      <div class="card-body" id="alertList"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fas fa-table text-success"></i> 전체 재고 테이블</h2>
+        <div class="card-actions">
+          <input type="text" id="invSearch" placeholder="자재명, 코드, 위치..." class="search-input" style="width:180px">
+          <select id="invCategory" class="filter-select"><option value="">전체 카테고리</option></select>
+          <select id="invStatus" class="filter-select"><option value="">전체 상태</option><option value="ok">정상</option><option value="low">부족</option><option value="critical">없음</option></select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead><tr><th>자재코드</th><th>자재명</th><th>카테고리</th><th>위치</th><th>재고 현황</th><th>최소 재고</th><th>상태</th><th>최근 처리</th><th>작업</th></tr></thead>
+            <tbody id="invTableBody"><tr><td colspan="9" class="text-center"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 재고 조정 모달 -->
+<div class="modal-overlay" id="adjustModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><h3><i class="fas fa-sliders-h"></i> 재고 직접 조정</h3><button class="modal-close" id="closeAdjustModal"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:16px">
+        <h4 id="adjustMatName" style="font-weight:700;margin-bottom:4px"></h4>
+        <p id="adjustMatCode" style="color:#888;font-size:.85rem"></p>
+      </div>
+      <div class="form-group"><label>현재 재고 수량 <span class="required">*</span></label><input type="number" id="adjustQty" class="form-control" min="0" placeholder="0"></div>
+      <div class="form-group"><label>조정 사유</label><input type="text" id="adjustReason" class="form-control" placeholder="예) 실사 조정, 파손 제거 등"></div>
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;font-size:.82rem;color:#856404"><i class="fas fa-info-circle"></i> 직접 조정은 재고 실사 시 사용하세요. 조정 내역은 이력에 기록됩니다.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="cancelAdjust" style="color:#666;border-color:#ddd">취소</button>
+      <button class="btn btn-warning" id="confirmAdjust"><i class="fas fa-check"></i> 조정 완료</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/common.js"></script>
+<script src="js/inventory.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>입출고 이력 - PLC 재고관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><i class="fas fa-microchip"></i><span class="logo-text">PLC 재고관리</span></div>
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+  </div>
+  <ul class="sidebar-menu">
+    <li class="menu-item"><a href="index.html"><i class="fas fa-tachometer-alt"></i><span>대시보드</span></a></li>
+    <li class="menu-item"><a href="materials.html"><i class="fas fa-boxes"></i><span>자재 관리</span></a></li>
+    <li class="menu-item"><a href="scan.html"><i class="fas fa-barcode"></i><span>바코드 스캔</span></a></li>
+    <li class="menu-item active"><a href="transactions.html"><i class="fas fa-exchange-alt"></i><span>입출고 이력</span></a></li>
+    <li class="menu-item"><a href="inventory.html"><i class="fas fa-clipboard-list"></i><span>재고 현황</span></a></li>
+    <li class="menu-item"><a href="categories.html"><i class="fas fa-sitemap"></i><span>카테고리 관리</span></a></li>
+    <li class="menu-item"><a href="handlers.html"><i class="fas fa-users"></i><span>담당자 관리</span></a></li>
+  </ul>
+  <div class="sidebar-footer"><span>v1.0.0</span></div>
+</nav>
+<main class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="topbar-title"><h1><i class="fas fa-exchange-alt"></i> 입출고 이력</h1></div>
+    <div class="topbar-actions">
+      <span class="date-badge" id="currentDate"></span>
+      <a href="scan.html" class="btn btn-primary"><i class="fas fa-barcode"></i> 새 입출고</a>
+    </div>
+  </header>
+  <div class="content-area">
+    <div class="stats-grid">
+      <div class="stat-card stat-total"><div class="stat-icon"><i class="fas fa-list-alt"></i></div><div class="stat-info"><h3 id="statTotal">-</h3><p>전체 처리 건수</p></div></div>
+      <div class="stat-card stat-in"><div class="stat-icon"><i class="fas fa-arrow-circle-down"></i></div><div class="stat-info"><h3 id="statIn">-</h3><p>입고 건수</p></div></div>
+      <div class="stat-card stat-out"><div class="stat-icon"><i class="fas fa-arrow-circle-up"></i></div><div class="stat-info"><h3 id="statOut">-</h3><p>출고 건수</p></div></div>
+      <div class="stat-card" style="background:#fff;border-left:4px solid #9c27b0"><div class="stat-icon" style="background:rgba(156,39,176,.12);color:#9c27b0"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="statHandlers">-</h3><p>담당자 수</p></div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="card"><div class="card-header"><h2><i class="fas fa-chart-bar text-primary"></i> 최근 7일 입출고</h2></div><div class="card-body"><div style="height:220px"><canvas id="txChart"></canvas></div></div></div>
+      <div class="card"><div class="card-header"><h2><i class="fas fa-chart-pie text-warning"></i> 카테고리별 출고</h2></div><div class="card-body"><div style="height:220px"><canvas id="catChart"></canvas></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fas fa-history text-success"></i> 입출고 이력</h2>
+        <div class="card-actions">
+          <input type="text" id="txSearch" placeholder="자재명, 담당자 검색..." class="search-input" style="width:180px">
+          <select id="txTypeFilter" class="filter-select"><option value="">전체</option><option value="in">입고</option><option value="out">출고</option></select>
+          <input type="date" id="dateFrom" class="filter-select">
+          <input type="date" id="dateTo" class="filter-select">
+          <button class="btn btn-sm" style="background:#f0f0f0;color:#555" id="resetFilter"><i class="fas fa-sync"></i></button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead><tr><th>구분</th><th>자재명</th><th>코드</th><th>수량</th><th>처리 후 재고</th><th>담당자</th><th>목적/비고</th><th>처리 일시</th></tr></thead>
+            <tbody id="txTableBody"><tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="txPagination"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/common.js"></script>
+<script src="js/transactions.js"></script>
+</body>
+</html>
