@@ -80,8 +80,8 @@ function bindModalOverlayClose(ids){
     el.addEventListener('click',function(e){if(e.target===el&&el._mbg)closeOverlay(id);el._mbg=false});
   });
 }
-function openOverlay(id){document.getElementById(id)?.classList.add('active')}
-function closeOverlay(id){document.getElementById(id)?.classList.remove('active')}
+function openOverlay(id){document.getElementById(id)?.classList.add('open')}
+function closeOverlay(id){document.getElementById(id)?.classList.remove('open')}
 
 /* ── 재고 상태 ── */
 function getStockStatus(m){if(m.current_stock<=0)return'critical';if(m.current_stock<m.min_stock)return'low';return'ok'}
