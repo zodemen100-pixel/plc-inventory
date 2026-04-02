@@ -348,36 +348,58 @@ function genBarcode() {
 
 /* ── 저장 ── */
 async function saveMaterial() {
-  const name = document.getElementById('matName').value.trim();
-  if (!name) { showToast('자재명을 입력해주세요.', 'warning'); return; }
-
-  const mat = {
-    id              : document.getElementById('matId').value || undefined,
-    name            : name,
-    model           : document.getElementById('matModel').value.trim(),
-    series          : document.getElementById('matSeries').value.trim(),
-    version         : document.getElementById('matVersion').value.trim(),
-    manufacture_date: document.getElementById('matMfgDate').value || null,
-    category        : document.getElementById('matCategory').value,
-    current_stock   : parseInt(document.getElementById('matStock').value)   || 0,
-    min_stock       : parseInt(document.getElementById('matMinStock').value) || 0,
-    unit            : document.getElementById('matUnit').value.trim()        || 'EA',
-    manager         : document.getElementById('matManager').value,
-    barcode         : document.getElementById('matBarcode').value.trim(),
-    description     : document.getElementById('matNote').value.trim(),
-    status          : 'active'
-  };
-
   try {
-    await MaterialAPI.save(mat);
-    showToast(editingId ? '수정되었습니다.' : '등록되었습니다.', 'success');
+    const id = document.getElementById('matId')?.value;
+
+    const payload = {
+      name: document.getElementById('matName').value.trim(),
+      model: document.getElementById('matModel').value.trim(),
+      series: document.getElementById('matSeries').value.trim(),
+      version: document.getElementById('matVersion').value.trim(),
+      category: document.getElementById('matCategory')?.value || '',
+      manager: document.getElementById('matManager')?.value || '',
+      location: document.getElementById('matLocation')?.value || '',
+      unit: document.getElementById('matUnit')?.value || 'EA',
+      barcode: document.getElementById('matBarcode').value.trim(),
+      manufacture_date: document.getElementById('matMfgDate')?.value || null,
+      min_stock: parseInt(document.getElementById('matMinStock')?.value || 0),
+      current_stock: parseInt(document.getElementById('matStock')?.value || 0),
+      description: document.getElementById('matDesc')?.value || ''
+    };
+
+    let result;
+
+    if (id) {
+      // 수정
+      result = await sb
+        .from('materials')
+        .update(payload)
+        .eq('id', id);
+    } else {
+      // 🔥 신규 (핵심: id 자동 생성)
+      payload.id = uuid();
+
+      result = await sb
+        .from('materials')
+        .insert([payload]);
+    }
+
+    if (result.error) {
+      console.error('저장 실패:', result.error);
+      showToast('저장 실패: ' + result.error.message, 'error');
+      return;
+    }
+
+    showToast('저장 완료', 'success');
+
     closeModal();
     await loadMaterials();
+
   } catch (e) {
-    showToast('저장 실패: ' + e.message, 'error');
+    console.error(e);
+    showToast('오류: ' + e.message, 'error');
   }
 }
-
 /* ── 삭제 ── */
 async function deleteMaterial(id) {
   if (!confirm('이 자재를 삭제하시겠습니까?')) return;
