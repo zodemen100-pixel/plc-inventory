@@ -12,7 +12,6 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="app-layout">
 
-  <!-- 사이드바 -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-microchip"></i>
@@ -30,13 +29,14 @@
     <div class="sidebar-footer">v1.0.0</div>
   </nav>
 
-  <!-- 메인 -->
   <div class="main-content" id="mainContent">
     <header class="topbar">
       <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
       </button>
-      <h1 class="page-title"><i class="fas fa-boxes"></i> 자재 관리</h1>
+      <div class="topbar-left">
+        <h1 class="page-title">자재 관리</h1>
+      </div>
       <div class="topbar-actions">
         <span class="date-badge" id="currentDate"></span>
         <span class="date-badge" id="liveTime"></span>
@@ -45,37 +45,55 @@
 
     <div class="page-content">
 
-      <!-- 검색 + 등록 버튼 -->
-      <div class="toolbar">
-        <div class="search-box">
+      <!-- 필터 바 -->
+      <div class="filter-bar">
+        <div class="search-wrap">
           <i class="fas fa-search"></i>
-          <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈 검색..."/>
+          <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈, 버전 검색..."/>
         </div>
+        <select id="filterCategory" class="form-select" onchange="applyFilter()">
+          <option value="">전체 카테고리</option>
+        </select>
+        <select id="filterStatus" class="form-select" onchange="applyFilter()">
+          <option value="">전체 상태</option>
+          <option value="normal">정상</option>
+          <option value="low">부족</option>
+          <option value="out">재고없음</option>
+        </select>
         <button class="btn btn-primary" onclick="openModal()">
           <i class="fas fa-plus"></i> 자재 등록
         </button>
       </div>
 
-      <!-- 자재 목록 테이블 -->
+      <!-- 자재 테이블 -->
       <div class="card">
-        <div class="card-body">
-          <table class="table" id="materialsTable">
-            <thead>
-              <tr>
-                <th>자재명</th>
-                <th>모델</th>
-                <th>시리즈</th>
-                <th>버전</th>
-                <th>카테고리</th>
-                <th>재고</th>
-                <th>상태</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody id="materialsTableBody">
-              <tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>
-            </tbody>
-          </table>
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-list"></i> 자재 목록</h3>
+          <span class="badge" id="totalCount">0건</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>자재명</th>
+                  <th>모델</th>
+                  <th>시리즈</th>
+                  <th>버전</th>
+                  <th>카테고리</th>
+                  <th>담당자</th>
+                  <th>재고</th>
+                  <th>상태</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody id="materialsTableBody">
+                <tr><td colspan="9" class="text-center">
+                  <i class="fas fa-spinner fa-spin"></i> 불러오는 중...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -85,100 +103,122 @@
 
 <!-- ===== 자재 등록/수정 모달 ===== -->
 <div class="modal-overlay" id="materialModal" onclick="handleOverlayClick(event,'materialModal')">
-  <div class="modal" style="max-width:520px;">
+  <div class="modal" style="max-width:600px;">
     <div class="modal-header">
       <h3 id="modalTitle"><i class="fas fa-plus-circle"></i> 자재 등록</h3>
       <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <form id="materialForm">
+      <form id="materialForm" onsubmit="return false;">
         <input type="hidden" id="matId"/>
 
-        <!-- 자재명 -->
-        <div class="form-group">
-          <label class="form-label required">자재명</label>
-          <input type="text" class="form-control" id="matName" placeholder="예) SIMATIC S7-1200" required/>
-        </div>
+        <div class="form-section">
+          <div class="form-section-title">기본 정보</div>
+          <div class="form-grid-2">
 
-        <!-- 모델 / 시리즈 -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">모델</label>
-            <input type="text" class="form-control" id="matModel" placeholder="예) CPU 1214C"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">시리즈</label>
-            <input type="text" class="form-control" id="matSeries" placeholder="예) S7-1200"/>
-          </div>
-        </div>
+            <div class="form-group full-width">
+              <label class="form-label required">자재명</label>
+              <input type="text" class="form-control" id="matName"
+                     placeholder="예) SIMATIC S7-1200 CPU 1214C" required/>
+            </div>
 
-        <!-- 버전 / 제조일자 -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">버전</label>
-            <input type="text" class="form-control" id="matVersion" placeholder="예) V4.5"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">제조일자</label>
-            <input type="date" class="form-control" id="matMfgDate"/>
-          </div>
-        </div>
+            <div class="form-group">
+              <label class="form-label">모델</label>
+              <input type="text" class="form-control" id="matModel"
+                     placeholder="예) CPU 1214C"/>
+            </div>
 
-        <!-- 카테고리 -->
-        <div class="form-group">
-          <label class="form-label">카테고리</label>
-          <select class="form-control" id="matCategory">
-            <option value="">-- 선택 --</option>
-          </select>
-        </div>
+            <div class="form-group">
+              <label class="form-label">시리즈</label>
+              <input type="text" class="form-control" id="matSeries"
+                     placeholder="예) S7-1200"/>
+            </div>
 
-        <!-- 현재재고 / 최소재고 -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">현재 재고</label>
-            <input type="number" class="form-control" id="matStock" value="0" min="0"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">최소 재고</label>
-            <input type="number" class="form-control" id="matMinStock" value="0" min="0"/>
+            <div class="form-group">
+              <label class="form-label">버전</label>
+              <input type="text" class="form-control" id="matVersion"
+                     placeholder="예) V4.5"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">제조일자</label>
+              <input type="date" class="form-control" id="matMfgDate"/>
+            </div>
+
           </div>
         </div>
 
-        <!-- 단위 / 담당자 -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">단위</label>
-            <input type="text" class="form-control" id="matUnit" placeholder="EA" value="EA"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">담당자</label>
-            <select class="form-control" id="matManager">
-              <option value="">-- 선택 --</option>
-            </select>
+        <div class="form-section">
+          <div class="form-section-title">분류 / 담당</div>
+          <div class="form-grid-2">
+
+            <div class="form-group">
+              <label class="form-label">카테고리</label>
+              <select class="form-control" id="matCategory">
+                <option value="">-- 선택 --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">담당자</label>
+              <select class="form-control" id="matManager">
+                <option value="">-- 선택 --</option>
+              </select>
+            </div>
+
           </div>
         </div>
 
-        <!-- 바코드 -->
-        <div class="form-group">
-          <label class="form-label">바코드</label>
-          <div class="input-group">
-            <input type="text" class="form-control" id="matBarcode" placeholder="자동생성 또는 직접입력"/>
-            <button type="button" class="btn btn-outline" onclick="genBarcode()">
-              <i class="fas fa-sync-alt"></i> 자동생성
-            </button>
+        <div class="form-section">
+          <div class="form-section-title">재고 정보</div>
+          <div class="form-grid-3">
+
+            <div class="form-group">
+              <label class="form-label">현재 재고</label>
+              <input type="number" class="form-control" id="matStock" value="0" min="0"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">최소 재고</label>
+              <input type="number" class="form-control" id="matMinStock" value="0" min="0"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">단위</label>
+              <input type="text" class="form-control" id="matUnit" value="EA" placeholder="EA"/>
+            </div>
+
           </div>
         </div>
 
-        <!-- 비고 -->
-        <div class="form-group">
-          <label class="form-label">비고</label>
-          <textarea class="form-control" id="matNote" rows="2" placeholder="추가 메모"></textarea>
+        <div class="form-section">
+          <div class="form-section-title">바코드</div>
+          <div class="form-group">
+            <label class="form-label">바코드</label>
+            <div class="input-with-btn">
+              <input type="text" class="form-control" id="matBarcode"
+                     placeholder="자동생성 또는 직접입력"/>
+              <button type="button" class="btn btn-outline" onclick="genBarcode()">
+                <i class="fas fa-sync-alt"></i> 자동생성
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">비고</div>
+          <div class="form-group">
+            <textarea class="form-control" id="matNote" rows="2"
+                      placeholder="추가 메모 사항을 입력하세요."></textarea>
+          </div>
         </div>
 
       </form>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-outline" onclick="closeModal()">
+        <i class="fas fa-times"></i> 취소
+      </button>
       <button class="btn btn-primary" onclick="saveMaterial()">
         <i class="fas fa-save"></i> 저장
       </button>
@@ -188,19 +228,21 @@
 
 <!-- 바코드 미리보기 모달 -->
 <div class="modal-overlay" id="barcodeModal" onclick="handleOverlayClick(event,'barcodeModal')">
-  <div class="modal" style="max-width:380px;text-align:center;">
+  <div class="modal" style="max-width:400px;text-align:center;">
     <div class="modal-header">
-      <h3><i class="fas fa-barcode"></i> 바코드</h3>
+      <h3><i class="fas fa-barcode"></i> 바코드 미리보기</h3>
       <button class="modal-close" onclick="closeBarcode()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <p id="bcMatName" style="font-weight:600;margin-bottom:12px;"></p>
+      <p id="bcMatName" style="font-weight:600;font-size:15px;margin-bottom:16px;"></p>
       <svg id="bcSvg"></svg>
-      <p id="bcValue" style="margin-top:8px;font-size:13px;color:#666;"></p>
+      <p id="bcValue" style="margin-top:10px;font-size:13px;color:#888;"></p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeBarcode()">닫기</button>
-      <button class="btn btn-primary" onclick="printBarcode()"><i class="fas fa-print"></i> 인쇄</button>
+      <button class="btn btn-primary" onclick="printBarcode()">
+        <i class="fas fa-print"></i> 인쇄
+      </button>
     </div>
   </div>
 </div>
