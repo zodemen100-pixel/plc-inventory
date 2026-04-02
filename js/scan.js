@@ -313,21 +313,20 @@ function openRegisterModal(bc) {
           </div>
 
           <div style="margin-bottom:12px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
-              자재명 <span style="color:#e53e3e;">*</span>
-            </label>
-            <input type="text" id="qrMatName" class="form-control" placeholder="자재명 입력"/>
-          </div>
+  <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+    자재명 <span style="color:#e53e3e;">*</span>
+  </label>
+  <input type="text" id="qrMatName" class="form-control" placeholder="자재명 입력"/>
+</div>
 
-          <div style="margin-bottom:12px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
-              카테고리 <span style="color:#e53e3e;">*</span>
-            </label>
-            <select id="qrMatCategory" class="form-control">
-              <option value="">-- 카테고리 선택 --</option>
-            </select>
-          </div>
-
+<div style="margin-bottom:12px;">
+  <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+    카테고리 <span style="color:#e53e3e;">*</span>
+  </label>
+  <select id="qrMatCategory" class="form-control">
+    <option value="">-- 카테고리 선택 --</option>
+  </select>
+</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
               <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">모델</label>
