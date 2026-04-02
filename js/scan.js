@@ -468,11 +468,24 @@ async function saveQuickRegister(bc) {
     return;
   }
 
-  const category = document.getElementById('qrMatCategory')?.value;
-  if (!category) {
-    showToast('카테고리를 선택하세요', 'warning');
-    return;
-  }
+  const mainId = document.getElementById('qrMatCategoryMain')?.value;
+const subId  = document.getElementById('qrMatCategorySub')?.value;
+
+if (!mainId || !subId) {
+  showToast('카테고리를 선택하세요', 'warning');
+  return;
+}
+
+const allCats = await CategoryAPI.getAll();
+const mainCat = allCats.find(c => c.id === mainId);
+const subCat  = allCats.find(c => c.id === subId);
+
+if (!mainCat || !subCat) {
+  showToast('카테고리 정보를 찾을 수 없습니다', 'error');
+  return;
+}
+
+const category = subCat.name;
 
   const model   = document.getElementById('qrMatModel')?.value.trim() || '';
   const series  = document.getElementById('qrMatSeries')?.value.trim() || '';
@@ -514,27 +527,20 @@ async function saveQuickRegister(bc) {
   }
 }
 async function loadMainCategories() {
-  const cats = await CategoryAPI.getAll();
+  try {
+    const mainList = await CategoryAPI.getLevel1();
+    const sel = document.getElementById('qrMatCategoryMain');
+    if (!sel) return;
 
-  const mainSet = [...new Set(cats.map(c => c.main))];
+    sel.innerHTML =
+      '<option value="">-- 대분류 선택 --</option>' +
+      mainList.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
-  const sel = document.getElementById('qrMatCategoryMain');
-
-  sel.innerHTML =
-    '<option value="">-- 대분류 선택 --</option>' +
-    mainSet.map(m => `<option value="${m}">${m}</option>`).join('');
-}
-
-async function loadSubCategories(main) {
-  const cats = await CategoryAPI.getAll();
-
-  const subList = cats
-    .filter(c => c.main === main)
-    .map(c => c.sub);
-
-  const sel = document.getElementById('qrMatCategorySub');
-
-  sel.innerHTML =
-    '<option value="">-- 중분류 선택 --</option>' +
-    subList.map(s => `<option value="${s}">${s}</option>`).join('');
+    const subSel = document.getElementById('qrMatCategorySub');
+    if (subSel) {
+      subSel.innerHTML = '<option value="">-- 중분류 선택 --</option>';
+    }
+  } catch (e) {
+    console.error('대분류 로드 실패', e);
+  }
 }
