@@ -300,56 +300,49 @@ textarea.form-control{resize:vertical}
 @media(max-width:1200px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){.dashboard-grid,.scan-page-wrap{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}}
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);transition:transform var(--transition)}
-  .sidebar.mobile-open{transform:translateX(0)}
+  /* 사이드바 모바일 처리 */
+  .sidebar{
+    position: fixed;
+    left: 0; top: 0;
+    height: 100vh;
+    width: var(--sidebar-w) !important;
+    transform: translateX(-100%);
+    transition: transform var(--transition);
+    z-index: 1000;
+  }
+  .sidebar.mobile-open{
+    transform: translateX(0);
+  }
+
+  /* 오버레이 */
+  .sidebar-overlay{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 999;
+  }
+  .sidebar-overlay.open{
+    display: block;
+  }
+
+  /* 메인 콘텐츠 */
   .main-content{margin-left:0!important}
-  .menu-toggle{display:block}
-  .sidebar-toggle{display:none}
+
+  /* 버튼 표시/숨김 */
+  .menu-toggle{display:flex!important;align-items:center;justify-content:center}
+  .sidebar-toggle{display:none!important}
+
+  /* 기타 */
   .content-area{padding:16px}
   .topbar{padding:0 16px}
   .stats-grid{grid-template-columns:1fr 1fr;gap:12px}
 }
+
+/* PC에서 메뉴토글 숨기기 */
+@media(min-width:769px){
+  .menu-toggle{display:none!important}
+  .sidebar{transform:translateX(0)!important}
+}
+
 @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-header{flex-direction:column;align-items:flex-start}}
-/* ===== 모바일 사이드바 ===== */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    transform: translateX(-100%);
-    transition: transform .3s ease;
-    z-index: 1000;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .5);
-    z-index: 999;
-  }
-
-  .sidebar-overlay.open {
-    display: block;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
-
-  .menu-toggle {
-    display: flex !important;
-  }
-}
-
-@media (min-width: 769px) {
-  .menu-toggle {
-    display: none;
-  }
-}
