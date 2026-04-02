@@ -336,11 +336,14 @@ function genBarcode() {
   const series  = document.getElementById('matSeries').value.trim();
   const version = document.getElementById('matVersion').value.trim();
   const mfg     = document.getElementById('matMfgDate').value || '';
+
   // 제조일자에서 월일만 추출 (예: 2024-03-15 → 0315)
   const mmdd    = mfg.length >= 10 ? mfg.slice(5,7) + mfg.slice(8,10) : '';
 
   document.getElementById('matBarcode').value =
-    [model||'MAT', series, version, mmdd].filter(Boolean).join('-');
+    [model || 'MAT', series, version, mmdd]
+      .filter(Boolean)
+      .join(''); // ← 여기 변경!
 }
 
 /* ── 저장 ── */
