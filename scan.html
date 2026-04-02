@@ -27,7 +27,9 @@
 </nav>
 <main class="main-content" id="mainContent">
   <header class="topbar">
-    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+  <i class="fas fa-bars"></i>
+</button>
     <div class="topbar-title"><h1><i class="fas fa-barcode"></i> 바코드 / QR 스캔</h1></div>
     <div class="topbar-actions"><span class="date-badge" id="currentDate"></span></div>
   </header>
@@ -120,6 +122,6 @@
 <script src="js/scan.js"></script>
 </body>
 <body>
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>  ← 이 줄 추가
 <nav class="sidebar" id="sidebar">
 </html>
