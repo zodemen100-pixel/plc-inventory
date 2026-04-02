@@ -119,6 +119,20 @@ async function populateFilterCategory() {
 async function loadCatTree() {
   try {
     catTree = await CategoryAPI.getTree();
+
+    // 전체 트리 가나다 정렬
+    catTree.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    catTree.forEach(l1 => {
+      if (l1.children) {
+        l1.children.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+        l1.children.forEach(l2 => {
+          if (l2.children) {
+            l2.children.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+          }
+        });
+      }
+    });
+
     const l1Sel = document.getElementById('catL1');
     if (!l1Sel) return;
     l1Sel.innerHTML = '<option value="">대분류 선택</option>';
@@ -153,8 +167,13 @@ function onCatL1Change() {
     document.getElementById('matCategory').value = l1Node?.name || '';
     return;
   }
+
+  // 가나다 정렬 후 추가
+  const sortedL2 = [...l1Node.children].sort((a, b) =>
+    a.name.localeCompare(b.name, 'ko'));
+
   l2Sel.disabled = false;
-  l1Node.children.forEach(l2 => {
+  sortedL2.forEach(l2 => {
     const o = document.createElement('option');
     o.value = l2.id; o.textContent = l2.name;
     l2Sel.appendChild(o);
