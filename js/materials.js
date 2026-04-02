@@ -335,10 +335,9 @@ function genBarcode() {
   const model   = document.getElementById('matModel').value.trim();
   const series  = document.getElementById('matSeries').value.trim();
   const version = document.getElementById('matVersion').value.trim();
-  const dateStr = (document.getElementById('matMfgDate').value||'').replace(/-/g,'').slice(2);
   const rand    = String(Math.floor(Math.random()*90)+10);
   document.getElementById('matBarcode').value =
-    [model||'MAT', series, version, dateStr, rand].filter(Boolean).join('-');
+    [model||'MAT', series, version, rand].filter(Boolean).join('-');
 }
 
 /* ── 저장 ── */
