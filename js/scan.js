@@ -419,23 +419,42 @@ function closeRegisterModal() {
 
 async function saveQuickRegister(bc) {
   const name = document.getElementById('qrMatName')?.value.trim();
-  if (!name) { showToast('자재명을 입력하세요', 'warning'); return; }
+  if (!name) {
+    showToast('자재명을 입력하세요', 'warning');
+    return;
+  }
 
   const handler = document.getElementById('handlerSelect')?.value;
-  if (!handler) { showToast('담당자를 선택하세요', 'warning'); return; }
+  if (!handler) {
+    showToast('담당자를 선택하세요', 'warning');
+    return;
+  }
+
+  const model   = document.getElementById('qrMatModel')?.value.trim()   || '';
+  const series  = document.getElementById('qrMatSeries')?.value.trim()  || '';
+  const version = document.getElementById('qrMatVersion')?.value.trim() || '';
+  const mfg     = document.getElementById('qrMatMfgDate')?.value || null;
+
+  // code 자동 생성
+  const codeBase = (model || series || 'MAT').replace(/\s+/g, '').toUpperCase();
+  const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, ''); // YYMMDD
+  const randPart = Math.floor(Math.random() * 900 + 100); // 100~999
+  const code = `${codeBase}-${datePart}-${randPart}`;
 
   const mat = {
+    id              : uuid(),   // ✅ 핵심: 신규 자재 ID 생성
+    code            : code,     // ✅ code NOT NULL 대비
     name            : name,
-    model           : document.getElementById('qrMatModel')?.value.trim()   || '',
-    series          : document.getElementById('qrMatSeries')?.value.trim()  || '',
-    version         : document.getElementById('qrMatVersion')?.value.trim() || '',
-    manufacture_date: document.getElementById('qrMatMfgDate')?.value        || null,
+    model           : model,
+    series          : series,
+    version         : version,
+    manufacture_date: mfg,
     barcode         : bc,
-    current_stock   : parseInt(document.getElementById('qrMatStock')?.value)    || 0,
-    min_stock       : parseInt(document.getElementById('qrMatMinStock')?.value)  || 1,
-    unit            : document.getElementById('qrMatUnit')?.value.trim()         || 'EA',
+    current_stock   : parseInt(document.getElementById('qrMatStock')?.value, 10) || 0,
+    min_stock       : parseInt(document.getElementById('qrMatMinStock')?.value, 10) || 1,
+    unit            : document.getElementById('qrMatUnit')?.value.trim() || 'EA',
     manager         : document.getElementById('qrMatManager')?.value || handler,
-    description     : document.getElementById('qrMatNote')?.value.trim()         || '',
+    description     : document.getElementById('qrMatNote')?.value.trim() || '',
     category        : '미분류',
     status          : 'active'
   };
@@ -446,7 +465,8 @@ async function saveQuickRegister(bc) {
     closeRegisterModal();
     _currentMaterial = saved;
     showResultCard(saved, bc);
-  } catch(e) {
+  } catch (e) {
+    console.error(e);
     showToast('등록 실패: ' + e.message, 'error');
   }
 }
