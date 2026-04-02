@@ -8,13 +8,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadHandlers();
   bindModalOverlayClose([]);
 
-  // 시분초 시계
-  const tickClock = () => {
-    const el = document.getElementById('currentTime');
-    if (el) el.textContent = new Date().toLocaleTimeString('ko-KR', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-    });
-  };
+  // 시분초 시계 (id: liveTime)
+  function tickClock() {
+    const el = document.getElementById('liveTime');
+    if (el) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      el.textContent = `${hh}:${mm}:${ss}`;
+    }
+  }
   tickClock();
   setInterval(tickClock, 1000);
 
