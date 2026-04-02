@@ -281,7 +281,7 @@ function openRegisterModal(bc) {
   document.getElementById('quickRegModal')?.remove();
 
   const modal = document.createElement('div');
-  modal.id        = 'quickRegModal';
+  modal.id = 'quickRegModal';
   modal.className = 'modal-overlay';
   modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center;padding:16px;';
 
@@ -311,12 +311,23 @@ function openRegisterModal(bc) {
           <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
             <i class="fas fa-info-circle"></i> 기본 정보
           </div>
+
           <div style="margin-bottom:12px;">
             <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
               자재명 <span style="color:#e53e3e;">*</span>
             </label>
             <input type="text" id="qrMatName" class="form-control" placeholder="자재명 입력"/>
           </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+              카테고리 <span style="color:#e53e3e;">*</span>
+            </label>
+            <select id="qrMatCategory" class="form-control">
+              <option value="">-- 카테고리 선택 --</option>
+            </select>
+          </div>
+
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
               <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">모델</label>
@@ -327,6 +338,7 @@ function openRegisterModal(bc) {
               <input type="text" id="qrMatSeries" class="form-control" placeholder="예) S7-1200"/>
             </div>
           </div>
+
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
               <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">버전</label>
@@ -400,19 +412,37 @@ function openRegisterModal(bc) {
       o.textContent = h.name + (h.department ? ` (${h.department})` : '');
       sel.appendChild(o);
     });
-    // 현재 선택된 담당자 자동 세팅
+
     const curHandler = document.getElementById('handlerSelect')?.value;
     if (curHandler) sel.value = curHandler;
   }).catch(() => {});
 
+  // 카테고리 드롭다운 채우기
+  loadCategoryOptions();
+
   // 오버레이 클릭 닫기
   let _mbg = false;
   modal.addEventListener('mousedown', e => { _mbg = e.target === modal; });
-  modal.addEventListener('click',     e => { if (e.target === modal && _mbg) closeRegisterModal(); _mbg = false; });
+  modal.addEventListener('click', e => {
+    if (e.target === modal && _mbg) closeRegisterModal();
+    _mbg = false;
+  });
 
   setTimeout(() => document.getElementById('qrMatName')?.focus(), 100);
 }
+async function loadCategoryOptions() {
+  try {
+    const cats = await CategoryAPI.getAll();
+    const sel = document.getElementById('qrMatCategory');
+    if (!sel) return;
 
+    sel.innerHTML =
+      '<option value="">-- 카테고리 선택 --</option>' +
+      cats.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+  } catch (e) {
+    console.error('카테고리 로드 실패', e);
+  }
+}
 function closeRegisterModal() {
   document.getElementById('quickRegModal')?.remove();
 }
@@ -430,20 +460,25 @@ async function saveQuickRegister(bc) {
     return;
   }
 
-  const model   = document.getElementById('qrMatModel')?.value.trim()   || '';
-  const series  = document.getElementById('qrMatSeries')?.value.trim()  || '';
+  const category = document.getElementById('qrMatCategory')?.value;
+  if (!category) {
+    showToast('카테고리를 선택하세요', 'warning');
+    return;
+  }
+
+  const model   = document.getElementById('qrMatModel')?.value.trim() || '';
+  const series  = document.getElementById('qrMatSeries')?.value.trim() || '';
   const version = document.getElementById('qrMatVersion')?.value.trim() || '';
   const mfg     = document.getElementById('qrMatMfgDate')?.value || null;
 
-  // code 자동 생성
   const codeBase = (model || series || 'MAT').replace(/\s+/g, '').toUpperCase();
-  const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, ''); // YYMMDD
-  const randPart = Math.floor(Math.random() * 900 + 100); // 100~999
+  const datePart = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  const randPart = Math.floor(Math.random() * 900 + 100);
   const code = `${codeBase}-${datePart}-${randPart}`;
 
   const mat = {
-    id              : uuid(),   // ✅ 핵심: 신규 자재 ID 생성
-    code            : code,     // ✅ code NOT NULL 대비
+    id              : uuid(),
+    code            : code,
     name            : name,
     model           : model,
     series          : series,
@@ -455,7 +490,7 @@ async function saveQuickRegister(bc) {
     unit            : document.getElementById('qrMatUnit')?.value.trim() || 'EA',
     manager         : document.getElementById('qrMatManager')?.value || handler,
     description     : document.getElementById('qrMatNote')?.value.trim() || '',
-    category        : '미분류',
+    category        : category,
     status          : 'active'
   };
 
