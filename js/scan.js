@@ -277,16 +277,6 @@ async function stopCamera() {
    ================================================ */
 
 function openRegisterModal(bc) {
-document.body.appendChild(modal);
-
-// 🔥👇 여기부터 붙여넣기
-loadMainCategories();
-
-document.getElementById('qrMatCategoryMain')
-  ?.addEventListener('change', e => {
-    loadSubCategories(e.target.value);
-  });
-// 🔥👆 여기까지
   // 기존 모달 제거
   document.getElementById('quickRegModal')?.remove();
 
