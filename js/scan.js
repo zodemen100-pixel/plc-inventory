@@ -7,6 +7,17 @@ let _scanHistory = [];
 document.addEventListener('DOMContentLoaded', async () => {
   await loadHandlers();
   bindModalOverlayClose([]);
+
+  // 시분초 시계
+  const tickClock = () => {
+    const el = document.getElementById('currentTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('ko-KR', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+  };
+  tickClock();
+  setInterval(tickClock, 1000);
+
   document.getElementById('barcodeInput')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') processBarcode();
   });
@@ -66,8 +77,24 @@ function showResultCard(mat, bc) {
     card.innerHTML = `
       <div class="result-header">
         <div class="result-icon error"><i class="fas fa-times"></i></div>
-        <div><div class="result-title">자재를 찾을 수 없습니다</div>
-        <div class="result-sub">바코드: ${esc(bc)}</div></div>
+        <div>
+          <div class="result-title">자재를 찾을 수 없습니다</div>
+          <div class="result-sub">바코드: <code style="background:#f0f2f5;padding:2px 6px;border-radius:4px">${esc(bc)}</code></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:14px;background:#fff8f8;border-radius:10px;border:1px solid #ffcdd2">
+        <p style="font-size:.85rem;color:#666;margin-bottom:12px">
+          <i class="fas fa-info-circle" style="color:#f44336"></i>
+          이 바코드로 등록된 자재가 없습니다. 새로 등록하시겠습니까?
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-success btn-sm" onclick="openRegisterModal('${esc(bc)}')">
+            <i class="fas fa-plus"></i> 새 자재로 등록
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="resetScan()">
+            <i class="fas fa-redo"></i> 다시 스캔
+          </button>
+        </div>
       </div>`;
     return;
   }
@@ -243,5 +270,115 @@ async function stopCamera() {
   if (_html5QrCode) {
     try { await _html5QrCode.stop(); await _html5QrCode.clear(); } catch (e) {}
     _html5QrCode = null;
+  }
+}
+/* ── 미등록 자재 빠른 등록 모달 ── */
+function openRegisterModal(bc) {
+  // 기존 모달 있으면 제거
+  const existing = document.getElementById('quickRegModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'quickRegModal';
+  modal.className = 'modal-overlay active';
+  modal.style.zIndex = '3000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3><i class="fas fa-plus"></i> 빠른 자재 등록</h3>
+        <button class="modal-close" onclick="document.getElementById('quickRegModal').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#f0f8ff;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:#1565c0">
+          <i class="fas fa-barcode"></i> 스캔된 바코드: <strong>${esc(bc)}</strong>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>자재명 <span class="required">*</span></label>
+            <input type="text" id="qrMatName" class="form-control" placeholder="자재명 입력">
+          </div>
+          <div class="form-group">
+            <label>모델명</label>
+            <input type="text" id="qrMatModel" class="form-control" placeholder="모델명 입력">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>현재 재고</label>
+            <input type="number" id="qrMatStock" class="form-control" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label>최소 재고</label>
+            <input type="number" id="qrMatMinStock" class="form-control" value="1" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>위치</label>
+            <input type="text" id="qrMatLocation" class="form-control" placeholder="예: A-1-1">
+          </div>
+          <div class="form-group">
+            <label>담당자</label>
+            <input type="text" id="qrMatManager" class="form-control" placeholder="담당자명">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>비고</label>
+          <input type="text" id="qrMatNote" class="form-control" placeholder="메모 (선택)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="document.getElementById('quickRegModal').remove()">취소</button>
+        <button class="btn btn-success" onclick="saveQuickRegister('${esc(bc)}')">
+          <i class="fas fa-save"></i> 등록 및 ${_scanMode === 'in' ? '입고' : '출고'} 처리
+        </button>
+      </div>
+    </div>`;
+
+  // 모달 드래그 닫힘 방지
+  let _mbg = false;
+  modal.addEventListener('mousedown', e => { _mbg = e.target === modal; });
+  modal.addEventListener('click', e => { if (e.target === modal && _mbg) modal.remove(); _mbg = false; });
+
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('qrMatName')?.focus(), 100);
+}
+
+async function saveQuickRegister(bc) {
+  const name = document.getElementById('qrMatName')?.value.trim();
+  if (!name) return showToast('자재명을 입력하세요', 'error');
+
+  const handler = document.getElementById('handlerSelect')?.value;
+  if (!handler) return showToast('담당자를 선택하세요', 'warning');
+
+  const id = uuid();
+  const mat = {
+    id,
+    code: id.substring(0, 8).toUpperCase(),
+    name,
+    model: document.getElementById('qrMatModel')?.value.trim() || '',
+    barcode: bc,
+    current_stock: parseInt(document.getElementById('qrMatStock')?.value) || 0,
+    min_stock: parseInt(document.getElementById('qrMatMinStock')?.value) || 1,
+    location: document.getElementById('qrMatLocation')?.value.trim() || '',
+    manager: document.getElementById('qrMatManager')?.value.trim() || handler,
+    description: document.getElementById('qrMatNote')?.value.trim() || '',
+    unit: 'EA',
+    category: '미분류',
+    status: 'active'
+  };
+
+  try {
+    const saved = await MaterialAPI.save(mat);
+    showToast('자재가 등록되었습니다!', 'success');
+    document.getElementById('quickRegModal')?.remove();
+
+    // 등록 후 바로 스캔 결과에 표시
+    _currentMaterial = saved;
+    showResultCard(saved, bc);
+  } catch (e) {
+    showToast('등록 실패: ' + e.message, 'error');
   }
 }
