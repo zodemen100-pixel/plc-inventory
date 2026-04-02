@@ -102,5 +102,106 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="js/common.js"></script>
 <script src="js/scan.js"></script>
+<!-- ===== 새 자재 등록 모달 (스캔 페이지) ===== -->
+<div class="modal-overlay" id="scanRegisterModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;padding:18px 24px;">
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-plus-circle"></i> 새 자재 등록
+      </h3>
+      <button onclick="closeScanRegisterModal()"
+        style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:0;max-height:70vh;overflow-y:auto;">
+
+      <div style="padding:16px 20px;border-bottom:1px solid #eee;">
+        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
+          <i class="fas fa-barcode"></i> 스캔된 바코드
+        </div>
+        <input type="text" id="srBarcode" class="form-control" readonly
+               style="background:#f8f9fa;font-family:monospace;font-size:14px;"/>
+      </div>
+
+      <div style="padding:16px 20px;border-bottom:1px solid #eee;">
+        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
+          <i class="fas fa-info-circle"></i> 기본 정보
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">
+            자재명 <span style="color:#e53e3e;">*</span>
+          </label>
+          <input type="text" id="srName" class="form-control" placeholder="예) SIMATIC S7-1200 CPU 1214C"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">모델</label>
+            <input type="text" id="srModel" class="form-control" placeholder="예) CPU 1214C"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">시리즈</label>
+            <input type="text" id="srSeries" class="form-control" placeholder="예) S7-1200"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">버전</label>
+            <input type="text" id="srVersion" class="form-control" placeholder="예) V4.5"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">제조일자</label>
+            <input type="date" id="srMfgDate" class="form-control"/>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;border-bottom:1px solid #eee;background:#f8f9fc;">
+        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
+          <i class="fas fa-cubes"></i> 재고 정보
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">현재 재고</label>
+            <input type="number" id="srStock" class="form-control" value="1" min="0"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">최소 재고</label>
+            <input type="number" id="srMinStock" class="form-control" value="0" min="0"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:4px;">단위</label>
+            <input type="text" id="srUnit" class="form-control" value="EA"/>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;border-bottom:1px solid #eee;">
+        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
+          <i class="fas fa-user"></i> 담당자
+        </div>
+        <select id="srManager" class="form-control">
+          <option value="">-- 선택 --</option>
+        </select>
+      </div>
+
+      <div style="padding:16px 20px;">
+        <div style="font-size:11px;font-weight:700;color:#2d6a9f;letter-spacing:1px;margin-bottom:12px;">
+          <i class="fas fa-sticky-note"></i> 비고
+        </div>
+        <textarea id="srNote" class="form-control" rows="2" placeholder="추가 메모"></textarea>
+      </div>
+
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;background:#fff;">
+      <button class="btn btn-outline" onclick="closeScanRegisterModal()">
+        <i class="fas fa-times"></i> 취소
+      </button>
+      <button class="btn btn-primary" onclick="saveScanRegister()">
+        <i class="fas fa-save"></i> 등록
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
