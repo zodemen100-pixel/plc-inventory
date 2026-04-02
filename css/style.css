@@ -346,3 +346,28 @@ textarea.form-control{resize:vertical}
 }
 
 @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-header{flex-direction:column;align-items:flex-start}}
+/* ===== 자재관리 레이아웃 꽉차게 ===== */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page-content {
+  flex: 1;
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.page-content .card {
+  width: 100%;
+  box-sizing: border-box;
+}
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  min-width: 800px;
+}

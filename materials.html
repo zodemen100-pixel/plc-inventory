@@ -250,6 +250,12 @@
       .msec .grid3 { grid-template-columns: 1fr 1fr; }
       .cat-select-wrap { grid-template-columns: 1fr; }
     }
+    /* 꽉 찬 레이아웃 */
+.app-layout { min-height: 100vh; }
+.main-content { width: 100%; min-width: 0; }
+.page-content { padding: 20px 28px; width: 100%; box-sizing: border-box; }
+.card { width: 100%; }
+.filter-bar { width: 100%; }
   </style>
 </head>
 <body>
@@ -289,25 +295,25 @@
 
     <div class="page-content">
 
-      <!-- 필터 바 -->
-      <div class="filter-bar">
-        <div class="search-wrap">
-          <i class="fas fa-search"></i>
-          <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈, 버전 검색..."/>
-        </div>
-        <select id="filterCategory" onchange="applyFilter()">
-          <option value="">전체 카테고리</option>
-        </select>
-        <select id="filterStatus" onchange="applyFilter()">
-          <option value="">전체 상태</option>
-          <option value="ok">정상</option>
-          <option value="low">부족</option>
-          <option value="critical">재고없음</option>
-        </select>
-        <button class="btn btn-primary" onclick="openModal()">
-          <i class="fas fa-plus"></i> 자재 등록
-        </button>
-      </div>
+<!-- 필터 바 -->
+<div class="filter-bar">
+  <div class="search-wrap">
+    <i class="fas fa-search"></i>
+    <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈, 버전 검색..."/>
+  </div>
+  <select id="filterCategory" onchange="applyFilter()">
+    <option value="">전체 카테고리</option>
+  </select>
+  <select id="filterStatus" onchange="applyFilter()">
+    <option value="">전체 상태</option>
+    <option value="ok">정상</option>
+    <option value="low">부족</option>
+    <option value="critical">재고없음</option>
+  </select>
+  <button class="btn btn-primary" onclick="openModal()">
+    <i class="fas fa-plus"></i> 자재 등록
+  </button>
+</div>
 
       <!-- 자재 목록 -->
       <div class="card">

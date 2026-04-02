@@ -28,7 +28,18 @@ async function loadMaterials() {
         <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
   }
 }
-
+/* ── 카테고리 필터 옵션 (알파벳/가나다 정렬) ── */
+async function populateFilterCategory() {
+  const sel = document.getElementById('filterCategory');
+  if (!sel) return;
+  const cats = [...new Set(allMaterials.map(m => m.category).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'ko'));
+  sel.innerHTML = '<option value="">전체 카테고리</option>';
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+}
 /* ── 필터 ── */
 function applyFilter() {
   const kw  = (document.getElementById('searchInput')?.value || '').toLowerCase();
