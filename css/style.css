@@ -310,3 +310,46 @@ textarea.form-control{resize:vertical}
   .stats-grid{grid-template-columns:1fr 1fr;gap:12px}
 }
 @media(max-width:480px){.stats-grid{grid-template-columns:1fr}.card-header{flex-direction:column;align-items:flex-start}}
+/* ===== 모바일 사이드바 ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform .3s ease;
+    z-index: 1000;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .menu-toggle {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .menu-toggle {
+    display: none;
+  }
+}

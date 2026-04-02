@@ -31,13 +31,46 @@ function showToast(msg,type='info'){
 function setCurrentDate(){const el=document.getElementById('currentDate');if(el)el.textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'})}
 
 /* ── 사이드바 ── */
-function initSidebar(){
-  const sidebar=document.getElementById('sidebar'),main=document.getElementById('mainContent');
-  const isMobile=()=>window.innerWidth<=768;
-  document.getElementById('sidebarToggle')?.addEventListener('click',()=>{if(!isMobile()){sidebar.classList.toggle('collapsed');main.classList.toggle('expanded')}});
-  document.getElementById('menuToggle')?.addEventListener('click',()=>{if(isMobile())sidebar.classList.toggle('mobile-open')});
-  document.addEventListener('click',e=>{if(isMobile()&&sidebar.classList.contains('mobile-open')&&!sidebar.contains(e.target))sidebar.classList.remove('mobile-open')});
+function initSidebar() {
+  // 현재 페이지 메뉴 활성화
+  const path = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.menu-item a').forEach(a => {
+    a.parentElement.classList.toggle('active', a.getAttribute('href') === path);
+  });
 }
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (!sidebar) return;
+
+  if (window.innerWidth <= 768) {
+    sidebar.classList.toggle('mobile-open');
+    if (overlay) overlay.classList.toggle('open');
+  } else {
+    sidebar.classList.toggle('collapsed');
+    document.getElementById('mainContent')?.classList.toggle('expanded');
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (overlay) overlay.classList.remove('open');
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) closeSidebar();
+});
+
+// 화면 크기 변경 시 처리
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    closeSidebar();
+  }
+});
+
 
 /* ── 모달 드래그 버그 수정 ── */
 function bindModalOverlayClose(ids){
