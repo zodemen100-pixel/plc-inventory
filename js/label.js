@@ -20,7 +20,7 @@ async function openLabelModal(singleId = null) {
 
   const modal = document.createElement('div');
   modal.id = 'labelModal';
-  modal.className = 'modal-overlay active';
+  modal.className = 'modal-overlay open';
   modal.style.zIndex = '3000';
   modal.innerHTML = `
     <div class="modal" style="max-width:780px;max-height:92vh">

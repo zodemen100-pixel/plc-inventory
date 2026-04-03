@@ -12,7 +12,7 @@ function openManualTxModal() {
 
   const modal = document.createElement('div');
   modal.id = 'manualTxModal';
-  modal.className = 'modal-overlay active';
+  modal.className = 'modal-overlay open';
   modal.style.zIndex = '3000';
   modal.innerHTML = `
     <div class="modal" style="max-width:680px">
