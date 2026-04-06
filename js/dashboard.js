@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  window._dashMaterials = [];
+  window._dashManufacturerMap = {};
+  window._dashSort = {
+    key: 'name',
+    order: 'asc'
+  };
+
   await loadDashboard();
   document.getElementById('searchInput')?.addEventListener('input', filterDashboardTable);
 });
@@ -10,30 +17,23 @@ async function loadDashboard() {
       TransactionAPI.getToday()
     ]);
 
-    // 통계
     const el = id => document.getElementById(id);
+
     if (el('totalMaterials')) el('totalMaterials').textContent = materials.length;
     if (el('todayIn')) el('todayIn').textContent = todayTx.filter(t => t.type === 'in').length;
     if (el('todayOut')) el('todayOut').textContent = todayTx.filter(t => t.type === 'out').length;
     if (el('lowStock')) el('lowStock').textContent = materials.filter(m => getStockStatus(m) !== 'ok').length;
 
-    // 부족재고
     renderLowStock(materials.filter(m => getStockStatus(m) !== 'ok'));
 
-    // 최근 이력
     const recentTx = await TransactionAPI.getAll(10);
     renderRecentTx(recentTx.slice(0, 10));
 
-    // 제조사 매핑 준비
     window._dashManufacturerMap = await buildManufacturerMap();
     window._dashMaterials = materials;
 
-    // 전체 재고 현황
-    renderDashTable(materials);
-
-    // TOP 10
+    renderFilteredDashboard();
     await loadTop10();
-
   } catch (e) {
     console.error('대시보드 로드 오류:', e);
     showToast('데이터 로드 오류: ' + e.message, 'error');
@@ -97,15 +97,12 @@ async function buildManufacturerMap() {
     const maker = (l1.name || '').trim();
     if (!maker) return;
 
-    // 1단계 제조사 자신
     map[maker] = maker;
 
-    // 2단계 유형
     (l1.children || []).forEach(l2 => {
       const l2Name = (l2.name || '').trim();
       if (l2Name) map[l2Name] = maker;
 
-      // 3단계 모델
       (l2.children || []).forEach(l3 => {
         const l3Name = (l3.name || '').trim();
         if (l3Name) map[l3Name] = maker;
@@ -121,23 +118,14 @@ function getManufacturerName(material) {
   const map = window._dashManufacturerMap || {};
 
   if (!category) return '미분류';
-
-  // 카테고리명이 정확히 등록된 항목과 일치할 때
   if (map[category]) return map[category];
 
-  // 혹시 "제조사 > 유형" 같이 저장된 경우를 대비
-  const normalized = category.split('>').map(v => v.trim()).filter(Boolean);
-  for (const token of normalized) {
-    if (map[token]) return map[token];
-  }
-
-  // 일부 데이터가 "제조사/유형", "제조사 - 유형" 같은 형식일 수도 있어 보정
-  const tokenized = category
-    .split(/[>/\-|]/)
+  const tokens = category
+    .split(/[>\-|/]/)
     .map(v => v.trim())
     .filter(Boolean);
 
-  for (const token of tokenized) {
+  for (const token of tokens) {
     if (map[token]) return map[token];
   }
 
@@ -145,8 +133,108 @@ function getManufacturerName(material) {
 }
 
 /* ─────────────────────────────
-   전체 재고 현황 렌더
+   정렬
 ───────────────────────────── */
+function setDashSort(key) {
+  const current = window._dashSort || { key: 'name', order: 'asc' };
+
+  if (current.key === key) {
+    current.order = current.order === 'asc' ? 'desc' : 'asc';
+  } else {
+    current.key = key;
+    current.order = 'asc';
+  }
+
+  window._dashSort = current;
+  renderFilteredDashboard();
+}
+
+function getDashSortIcon(key) {
+  const sort = window._dashSort || { key: 'name', order: 'asc' };
+
+  if (sort.key !== key) {
+    return '<i class="fas fa-sort" style="font-size:.72rem;color:#999"></i>';
+  }
+
+  if (sort.order === 'asc') {
+    return '<i class="fas fa-sort-up" style="font-size:.72rem;color:var(--secondary)"></i>';
+  }
+
+  return '<i class="fas fa-sort-down" style="font-size:.72rem;color:var(--secondary)"></i>';
+}
+
+function compareDashItems(a, b) {
+  const sort = window._dashSort || { key: 'name', order: 'asc' };
+  const dir = sort.order === 'desc' ? -1 : 1;
+
+  let av = '';
+  let bv = '';
+
+  if (sort.key === 'category') {
+    av = a.category || '';
+    bv = b.category || '';
+  } else if (sort.key === 'status') {
+    av = getStatusRank(getStockStatus(a));
+    bv = getStatusRank(getStockStatus(b));
+  } else {
+    av = a.name || '';
+    bv = b.name || '';
+  }
+
+  let result = 0;
+
+  if (typeof av === 'number' && typeof bv === 'number') {
+    result = av - bv;
+  } else {
+    result = String(av).localeCompare(String(bv), 'ko');
+  }
+
+  if (result === 0) {
+    result = String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+  }
+  if (result === 0) {
+    result = String(a.code || '').localeCompare(String(b.code || ''), 'ko');
+  }
+
+  return result * dir;
+}
+
+function getStatusRank(status) {
+  const rank = {
+    critical: 0,
+    low: 1,
+    ok: 2
+  };
+  return rank[status] ?? 99;
+}
+
+/* ─────────────────────────────
+   검색 + 렌더
+───────────────────────────── */
+function filterDashboardTable() {
+  renderFilteredDashboard();
+}
+
+function renderFilteredDashboard() {
+  const keyword = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+
+  const list = (window._dashMaterials || []).filter(m => {
+    if (!keyword) return true;
+
+    const maker = getManufacturerName(m).toLowerCase();
+
+    return (
+      (m.name || '').toLowerCase().includes(keyword) ||
+      (m.code || '').toLowerCase().includes(keyword) ||
+      (m.category || '').toLowerCase().includes(keyword) ||
+      (m.location || '').toLowerCase().includes(keyword) ||
+      maker.includes(keyword)
+    );
+  });
+
+  renderDashTable(list);
+}
+
 function renderDashTable(list) {
   const tbody = document.getElementById('materialsTableBody');
   if (!tbody) return;
@@ -180,11 +268,7 @@ function groupMaterialsByManufacturer(list) {
   });
 
   Object.keys(grouped).forEach(key => {
-    grouped[key].sort((a, b) => {
-      const an = (a.name || '').localeCompare((b.name || ''), 'ko');
-      if (an !== 0) return an;
-      return (a.code || '').localeCompare((b.code || ''), 'ko');
-    });
+    grouped[key] = grouped[key].sort(compareDashItems);
   });
 
   return grouped;
@@ -195,37 +279,61 @@ function renderManufacturerSection(name, items) {
   const totalStock = items.reduce((sum, m) => sum + Number(m.current_stock || 0), 0);
   const lowCount = items.filter(m => getStockStatus(m) !== 'ok').length;
   const hasKeyword = !!(document.getElementById('searchInput')?.value || '').trim();
-  const defaultOpen = hasKeyword ? 'open' : '';
+  const isOpen = hasKeyword;
 
   return `
-    <div class="dash-maker-group ${defaultOpen}" style="border:1px solid #e9ecef;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff">
+    <div class="dash-maker-group ${isOpen ? 'open' : ''}" style="border:1px solid #e9ecef;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff">
       <button
         type="button"
         onclick="toggleDashManufacturer('${sectionId}', this)"
         style="width:100%;border:none;background:#f8f9fa;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer"
       >
-        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap">
           <i class="fas fa-industry" style="color:var(--secondary)"></i>
           <strong style="font-size:.92rem;color:#1a1a2e">${esc(name)}</strong>
           <span class="badge badge-secondary">${items.length}개 자재</span>
           <span style="font-size:.78rem;color:#666">총 재고 ${totalStock}</span>
           ${lowCount > 0 ? `<span class="badge badge-warning">부족 ${lowCount}</span>` : ''}
         </div>
-        <i class="fas fa-chevron-down dash-maker-chevron" style="color:#666;transition:transform .2s ease"></i>
+        <i class="fas fa-chevron-down dash-maker-chevron" style="color:#666;transition:transform .2s ease;transform:${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}"></i>
       </button>
 
-      <div id="${sectionId}" style="display:${hasKeyword ? 'block' : 'none'};border-top:1px solid #eef1f4;background:#fff">
+      <div id="${sectionId}" style="display:${isOpen ? 'block' : 'none'};border-top:1px solid #eef1f4;background:#fff">
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:.84rem">
             <thead>
               <tr style="background:#fcfcfd">
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">자재코드</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">자재명</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">카테고리</th>
+                <th
+                  onclick="setDashSort('name')"
+                  style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
+                  title="자재명 정렬"
+                >
+                  <span style="display:inline-flex;align-items:center;gap:6px">
+                    자재명 ${getDashSortIcon('name')}
+                  </span>
+                </th>
+                <th
+                  onclick="setDashSort('category')"
+                  style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
+                  title="카테고리 정렬"
+                >
+                  <span style="display:inline-flex;align-items:center;gap:6px">
+                    카테고리 ${getDashSortIcon('category')}
+                  </span>
+                </th>
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">위치</th>
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">현재 재고</th>
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">최소 재고</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">상태</th>
+                <th
+                  onclick="setDashSort('status')"
+                  style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
+                  title="상태 정렬"
+                >
+                  <span style="display:inline-flex;align-items:center;gap:6px">
+                    상태 ${getDashSortIcon('status')}
+                  </span>
+                </th>
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">작업</th>
               </tr>
             </thead>
@@ -291,29 +399,6 @@ function slugify(text) {
     .toLowerCase()
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9가-힣_]/g, '');
-}
-
-/* ─────────────────────────────
-   검색
-───────────────────────────── */
-function filterDashboardTable() {
-  const keyword = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-
-  const list = (window._dashMaterials || []).filter(m => {
-    if (!keyword) return true;
-
-    const maker = getManufacturerName(m).toLowerCase();
-
-    return (
-      (m.name || '').toLowerCase().includes(keyword) ||
-      (m.code || '').toLowerCase().includes(keyword) ||
-      (m.category || '').toLowerCase().includes(keyword) ||
-      (m.location || '').toLowerCase().includes(keyword) ||
-      maker.includes(keyword)
-    );
-  });
-
-  renderDashTable(list);
 }
 
 // TOP 10 자주 사용 자재
