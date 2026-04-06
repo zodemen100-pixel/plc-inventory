@@ -5,6 +5,7 @@
 
 let _manualTxList = [];
 let _manualMaterials = [];
+const MANUAL_RECENT_KEY = 'manual_recent_material_ids';
 
 function openManualTxModal() {
   const existing = document.getElementById('manualTxModal');
@@ -37,8 +38,15 @@ function openManualTxModal() {
         <!-- 자재 추가 폼 -->
         <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px">
           <div style="font-size:.9rem;font-weight:700;margin-bottom:12px;color:#1a1a2e">
-            <i class="fas fa-plus-circle" style="color:var(--success)"></i> 자재 추가
-          </div>
+  <i class="fas fa-plus-circle" style="color:var(--success)"></i> 자재 추가
+</div>
+
+<div id="manualRecentWrap" style="display:none;margin-bottom:12px;padding:10px;background:#fff;border:1px solid #e9ecef;border-radius:8px">
+  <div style="font-size:.78rem;font-weight:700;color:#555;margin-bottom:8px">
+    <i class="fas fa-history"></i> 최근 사용 자재
+  </div>
+  <div id="manualRecentItems" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div>
 
           <div class="form-row">
             <div class="form-group" style="margin-bottom:8px">
@@ -155,6 +163,7 @@ function openManualTxModal() {
     }
 
     filterManualMaterials();
+    renderRecentManualMaterials();
 
     const last = localStorage.getItem('lastHandler');
     if (last && hSel) hSel.value = last;
@@ -231,15 +240,27 @@ function onManualMatChange() {
     ? 'color:var(--danger);font-weight:700;'
     : 'color:#333;font-weight:600;';
 
-  info.style.display = 'block';
-  info.innerHTML = `
+  const manufactureYm = mat.manufacture_date
+  ? String(mat.manufacture_date).slice(0, 7).replace('-', '.')
+  : '-';
+
+   info.style.display = 'block';
+   info.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;font-size:.82rem">
-      <div><strong>자재명:</strong> ${esc(mat.name || '-')}</div>
-      <div><strong>자재코드:</strong> ${esc(mat.code || '-')}</div>
-      <div><strong>모델:</strong> ${esc(mat.model || '-')}</div>
-      <div><strong>카테고리:</strong> ${esc(mat.category || '-')}</div>
-      <div><strong>담당자:</strong> ${esc(mat.manager || '-')}</div>
-      <div><strong>현재 재고:</strong> <span style="${lowStyle}">${mat.current_stock} ${esc(mat.unit || 'EA')}</span></div>
+    <div><strong>자재명:</strong> ${esc(mat.name || '-')}</div>
+    <div><strong>모델:</strong> ${esc(mat.model || '-')}</div>
+
+    <div><strong>시리즈:</strong> ${esc(mat.series || '-')}</div>
+    <div><strong>버전:</strong> ${esc(mat.version || '-')}</div>
+
+    <div><strong>제조년월:</strong> ${esc(manufactureYm)}</div>
+    <div><strong>카테고리:</strong> ${esc(mat.category || '-')}</div>
+
+    <div><strong>위치:</strong> ${esc(mat.location || '-')}</div>
+    <div><strong>담당자:</strong> ${esc(mat.manager || '-')}</div>
+
+    <div><strong>바코드:</strong> ${esc(mat.barcode || '-')}</div>
+    <div><strong>현재 재고:</strong> <span style="${lowStyle}">${mat.current_stock} ${esc(mat.unit || 'EA')}</span></div>
     </div>
   `;
 }
@@ -261,6 +282,8 @@ function addManualTxItem() {
   }
 
   _manualTxList.push({ mat, type, qty, note });
+  saveRecentManualMaterial(mat.id);
+  renderRecentManualMaterials();
   renderManualTxList();
 
   document.getElementById('manualMatSel').value = '';
@@ -363,4 +386,69 @@ async function submitManualTx() {
   } catch (e) {
     showToast('처리 실패: ' + e.message, 'error');
   }
+}
+function getRecentManualMaterialIds() {
+  try {
+    return JSON.parse(localStorage.getItem(MANUAL_RECENT_KEY) || '[]');
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveRecentManualMaterial(materialId) {
+  const ids = getRecentManualMaterialIds().filter(id => id !== materialId);
+  ids.unshift(materialId);
+  localStorage.setItem(MANUAL_RECENT_KEY, JSON.stringify(ids.slice(0, 5)));
+}
+
+function renderRecentManualMaterials() {
+  const wrap = document.getElementById('manualRecentWrap');
+  const items = document.getElementById('manualRecentItems');
+  if (!wrap || !items) return;
+
+  const ids = getRecentManualMaterialIds();
+  const recentList = ids
+    .map(id => _manualMaterials.find(m => m.id === id))
+    .filter(Boolean);
+
+  if (!recentList.length) {
+    wrap.style.display = 'none';
+    items.innerHTML = '';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  items.innerHTML = recentList.map(m => {
+    const manufactureYm = m.manufacture_date
+      ? String(m.manufacture_date).slice(0, 7).replace('-', '.')
+      : '-';
+
+    const label = [
+      m.name || '-',
+      m.model || '-',
+      m.series || '-',
+      m.version || '-',
+      manufactureYm
+    ].join(' / ');
+
+    return `
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+        onclick="selectRecentManualMaterial('${m.id}')"
+        title="${esc(label)}"
+      >
+        ${esc(m.name || '-')}
+      </button>
+    `;
+  }).join('');
+}
+
+function selectRecentManualMaterial(id) {
+  const sel = document.getElementById('manualMatSel');
+  if (!sel) return;
+
+  sel.value = id;
+  onManualMatChange();
 }
