@@ -147,22 +147,20 @@ function previewImport(e) {
       const cols = parseCSVLine(lines[i]);
       if (!cols[1]?.trim()) continue;
       _importData.push({
-        id: uuid(),
-        code: cols[0]?.trim() || '',
-        name: cols[1]?.trim() || '',
-        model: cols[2]?.trim() || '',
-        version: cols[3]?.trim() || '',
-        category: cols[4]?.trim() || '미분류',
-        location: cols[5]?.trim() || '',
-        current_stock: parseInt(cols[6]) || 0,
-        min_stock: parseInt(cols[7]) || 1,
-        unit: cols[8]?.trim() || 'EA',
-        barcode: cols[9]?.trim() || '',
-        manufacture_date: cols[10]?.trim() || null,
-        manager: cols[11]?.trim() || '',
-        description: cols[12]?.trim() || '',
-        status: 'active'
-      });
+  code: cols[0]?.trim() || '',
+  name: cols[1]?.trim() || '',
+  model: cols[2]?.trim() || '',
+  version: cols[3]?.trim() || '',
+  category: cols[4]?.trim() || '',
+  location: cols[5]?.trim() || '',
+  current_stock: Number(cols[6] || 0),
+  min_stock: Number(cols[7] || 0),
+  unit: cols[8]?.trim() || 'EA',
+  barcode: cols[9]?.trim() || '',
+  manufacture_date: cols[10]?.trim() || null,
+  manager: cols[11]?.trim() || '',
+  description: cols[12]?.trim() || ''
+});
     }
 
     const preview = document.getElementById('importPreview');
@@ -197,13 +195,35 @@ function parseCSVLine(line) {
 
 async function doImport() {
   if (!_importData.length) return showToast('가져올 데이터가 없습니다', 'warning');
+
   try {
     showToast(`${_importData.length}개 자재 저장 중...`, 'info');
-    for (const mat of _importData) {
+
+    let created = 0;
+    let updated = 0;
+
+    for (const row of _importData) {
+      const code = (row.code || '').trim();
+      if (!code) continue;
+
+      const existing = await MaterialAPI.getByCode(code);
+
+      const mat = {
+        ...row,
+        id: existing?.id || uuid(),
+        code: code,
+        status: 'active'
+      };
+
       await MaterialAPI.save(mat);
+
+      if (existing) updated++;
+      else created++;
     }
-    showToast(`${_importData.length}개 자재가 등록되었습니다!`, 'success');
+
+    showToast(`가져오기 완료: 신규 ${created}건, 수정 ${updated}건`, 'success');
     document.getElementById('importModal')?.remove();
+
     if (typeof loadMaterials === 'function') await loadMaterials();
     if (typeof loadDashboard === 'function') await loadDashboard();
   } catch (e) {

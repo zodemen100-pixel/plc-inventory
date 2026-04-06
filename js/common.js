@@ -117,6 +117,27 @@ const MaterialAPI={
     const{data,error}=await sb.from('materials').upsert(mat,{onConflict:'id'}).select().single();
     if(error)throw error;return data
   },
+  async getByCode(code){
+  const { data, error } = await sb
+    .from('materials')
+    .select('*')
+    .eq('code', code)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+  },
+
+  async save(mat){
+  const { data, error } = await sb
+    .from('materials')
+    .upsert(mat, { onConflict:'id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+  },
   async delete(id){
     const{error}=await sb.from('materials').update({status:'inactive'}).eq('id',id);
     if(error)throw error
