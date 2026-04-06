@@ -426,7 +426,7 @@ function openRegisterModal(bc) {
   }).catch(() => {});
 
   // 카테고리 드롭다운 채우기
-  loadCategoryOptions();
+  loadMainCategories();
 
   // 오버레이 클릭 닫기
   let _mbg = false;

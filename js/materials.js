@@ -321,21 +321,72 @@ async function applyBulkEdit() {
     showToast('일괄 수정 실패: ' + e.message, 'error');
   }
 }
-/* ── 카테고리 필터 옵션 ── */
-async function populateFilterCategory() {
-  const sel = document.getElementById('filterCategory');
-  if (!sel) return;
+/* ── 필터 ── */
+function applyFilter() {
+  const kw = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const cat = document.getElementById('filterCategory')?.value || '';
+  const st = document.getElementById('filterStatus')?.value || '';
+  const sortBy = document.getElementById('sortBy')?.value || 'name';
+  const sortOrder = document.getElementById('sortOrder')?.value || 'asc';
 
-  const cats = [...new Set(allMaterials.map(m => m.category).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'ko'));
+  let list = [...allMaterials];
 
-  sel.innerHTML = '<option value="">전체 카테고리</option>';
-  cats.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c;
-    o.textContent = c;
-    sel.appendChild(o);
+  if (kw) {
+    list = list.filter(m =>
+      (m.name || '').toLowerCase().includes(kw) ||
+      (m.model || '').toLowerCase().includes(kw) ||
+      (m.series || '').toLowerCase().includes(kw) ||
+      (m.version || '').toLowerCase().includes(kw) ||
+      (m.code || '').toLowerCase().includes(kw) ||
+      (m.manager || '').toLowerCase().includes(kw)
+    );
+  }
+
+  if (cat) list = list.filter(m => (m.category || '').includes(cat));
+  if (st) list = list.filter(m => getStockStatus(m) === st);
+
+  list.sort((a, b) => {
+    let av = '';
+    let bv = '';
+
+    switch (sortBy) {
+      case 'code':
+        av = a.code || '';
+        bv = b.code || '';
+        break;
+      case 'category':
+        av = a.category || '';
+        bv = b.category || '';
+        break;
+      case 'manager':
+        av = a.manager || '';
+        bv = b.manager || '';
+        break;
+      case 'stock':
+        av = Number(a.current_stock || 0);
+        bv = Number(b.current_stock || 0);
+        break;
+      case 'updated':
+        av = new Date(a.updated_at || a.created_at || 0).getTime();
+        bv = new Date(b.updated_at || b.created_at || 0).getTime();
+        break;
+      default:
+        av = a.name || '';
+        bv = b.name || '';
+        break;
+    }
+
+    let result = 0;
+    if (typeof av === 'number' && typeof bv === 'number') {
+      result = av - bv;
+    } else {
+      result = String(av).localeCompare(String(bv), 'ko');
+    }
+
+    return sortOrder === 'desc' ? -result : result;
   });
+
+  renderTable(list);
 }
 
 /* ── 카테고리 3단계 로드 ── */
@@ -382,7 +433,10 @@ function onCatL1Change() {
   l3Sel.disabled  = true;
   document.getElementById('matCategory').value = '';
 
-  if (!l1Id) { l2Sel.disabled = true; return; }
+  if (!l1Id) {
+    l2Sel.disabled = true;
+    return;
+  }
 
   const l1Node = catTree.find(x => x.id === l1Id);
   if (!l1Node?.children?.length) {
@@ -391,14 +445,15 @@ function onCatL1Change() {
     return;
   }
 
-  // 가나다 정렬 후 추가
   const sortedL2 = [...l1Node.children].sort((a, b) =>
-    a.name.localeCompare(b.name, 'ko'));
+    a.name.localeCompare(b.name, 'ko')
+  );
 
   l2Sel.disabled = false;
   sortedL2.forEach(l2 => {
     const o = document.createElement('option');
-    o.value = l2.id; o.textContent = l2.name;
+    o.value = l2.id;
+    o.textContent = l2.name;
     l2Sel.appendChild(o);
   });
 }
