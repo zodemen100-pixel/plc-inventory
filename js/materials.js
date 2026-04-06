@@ -359,7 +359,7 @@ async function saveMaterial() {
   const series = document.getElementById('matSeries').value.trim();
   const version = document.getElementById('matVersion').value.trim();
   const mfg = document.getElementById('matMfgDate').value || '';
-  const barcode = document.getElementById('matBarcode').value.trim();
+  const barcode = document.getElementById('matBarcode').value.trim() || null;
 
   // code 자동 생성
   // 예: MAT-PLC-S7-250402

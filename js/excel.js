@@ -156,7 +156,7 @@ function previewImport(e) {
        current_stock: Number(cols[6] || 0),
         min_stock: Number(cols[7] || 0),
         unit: cols[8]?.trim() || 'EA',
-        barcode: cols[9]?.trim() || '',
+        barcode: cols[9]?.trim() || null,
         manufacture_date: cols[10]?.trim() || null,
         manager: cols[11]?.trim() || '',
        description: cols[12]?.trim() || ''
