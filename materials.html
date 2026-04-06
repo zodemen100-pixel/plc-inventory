@@ -314,7 +314,21 @@
     <i class="fas fa-plus"></i> 자재 등록
   </button>
 </div>
+<div id="bulkActionBar" style="display:none;margin:-8px 0 16px 0;padding:12px 14px;background:#eef6ff;border:1px solid #bfdbfe;border-radius:10px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+  <div style="font-size:13px;color:#1e3a5f;font-weight:600">
+    선택된 자재 <span id="selectedCount">0</span>건
+  </div>
 
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-outline btn-sm" onclick="clearSelection()">
+      <i class="fas fa-times-circle"></i> 선택 해제
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="openBulkEditModal()">
+      <i class="fas fa-pen"></i> 선택 항목 일괄수정
+    </button>
+  </div>
+
+</div>
       <!-- 자재 목록 -->
       <div class="card">
         <div class="card-header">
@@ -325,16 +339,19 @@
           <table class="table">
             <thead>
               <tr>
-                <th>자재명</th>
-                <th>모델</th>
-                <th>시리즈</th>
-                <th>버전</th>
-                <th>카테고리</th>
-                <th>담당자</th>
-                <th>재고</th>
-                <th>상태</th>
-                <th>작업</th>
-              </tr>
+  <th style="width:44px;text-align:center">
+    <input type="checkbox" id="checkAllMaterials" onchange="toggleSelectAll(this.checked)">
+  </th>
+  <th>자재명</th>
+  <th>모델</th>
+  <th>시리즈</th>
+  <th>버전</th>
+  <th>카테고리</th>
+  <th>담당자</th>
+  <th>재고</th>
+  <th>상태</th>
+  <th>작업</th>
+</tr>
             </thead>
             <tbody id="materialsTableBody">
               <tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
@@ -496,7 +513,69 @@
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="bulkEditModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h3><i class="fas fa-layer-group"></i> 선택 자재 일괄 수정</h3>
+      <button class="modal-close-btn" onclick="closeBulkEditModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
 
+    <div class="modal-body">
+      <div class="msec bg">
+        <div class="msec-title"><i class="fas fa-check-square"></i> 수정할 항목 선택</div>
+
+        <div class="grid2 row">
+          <div>
+            <label><input type="checkbox" id="bulkUseSeries"> 시리즈</label>
+            <input type="text" class="form-control" id="bulkSeries" placeholder="예) ControlLogix">
+          </div>
+          <div>
+            <label><input type="checkbox" id="bulkUseVersion"> 버전</label>
+            <input type="text" class="form-control" id="bulkVersion" placeholder="예) V2.0">
+          </div>
+        </div>
+
+        <div class="grid2 row">
+          <div>
+            <label><input type="checkbox" id="bulkUseCategory"> 카테고리</label>
+            <input type="text" class="form-control" id="bulkCategory" placeholder="예) AB > PLC">
+          </div>
+          <div>
+            <label><input type="checkbox" id="bulkUseManager"> 담당자</label>
+            <select class="form-control" id="bulkManager">
+              <option value="">-- 선택 --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2 row">
+          <div>
+            <label><input type="checkbox" id="bulkUseLocation"> 위치</label>
+            <input type="text" class="form-control" id="bulkLocation" placeholder="예) A-1-2">
+          </div>
+          <div>
+            <label><input type="checkbox" id="bulkUseMinStock"> 최소재고</label>
+            <input type="number" class="form-control" id="bulkMinStock" min="0" placeholder="0">
+          </div>
+        </div>
+
+        <div class="row">
+          <label><input type="checkbox" id="bulkUseDescription"> 비고</label>
+          <textarea class="form-control" id="bulkDescription" rows="3" placeholder="비고 일괄 변경"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeBulkEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="applyBulkEdit()">
+        <i class="fas fa-save"></i> 선택 항목 저장
+      </button>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>

@@ -3,29 +3,35 @@
    =================================================== */
 
 let allMaterials = [];
-let editingId    = null;
-let catTree      = [];
+let filteredMaterials = [];
+let selectedMaterialIds = new Set();
+let editingId = null;
+let catTree = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadMaterials();
-  document.getElementById('searchInput')
-    .addEventListener('input', () => applyFilter());
+
+  document.getElementById('searchInput')?.addEventListener('input', applyFilter);
+  document.getElementById('filterCategory')?.addEventListener('change', applyFilter);
+  document.getElementById('filterStatus')?.addEventListener('change', applyFilter);
+
+  await loadBulkManagerOptions();
 });
 
 /* ── 자재 목록 ── */
 async function loadMaterials() {
   const tbody = document.getElementById('materialsTableBody');
   if (tbody) tbody.innerHTML =
-    `<tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
-      <i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
+  `<tr><td colspan="9" style="text-align:center;padding:40px;color:red;">
+    <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
   try {
     allMaterials = await MaterialAPI.getAll();
     await populateFilterCategory();
     applyFilter();
   } catch (e) {
     if (tbody) tbody.innerHTML =
-      `<tr><td colspan="9" style="text-align:center;padding:40px;color:red;">
-        <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
+  `<tr><td colspan="10" style="text-align:center;padding:40px;color:red;">
+    <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
   }
 }
 /* ── 카테고리 필터 옵션 (알파벳/가나다 정렬) ── */
@@ -44,65 +50,233 @@ async function populateFilterCategory() {
 function applyFilter() {
   const kw  = (document.getElementById('searchInput')?.value || '').toLowerCase();
   const cat = document.getElementById('filterCategory')?.value || '';
-  const st  = document.getElementById('filterStatus')?.value  || '';
+  const st  = document.getElementById('filterStatus')?.value || '';
 
-  let list = allMaterials;
-  if (kw)  list = list.filter(m =>
-    (m.name||'').toLowerCase().includes(kw) ||
-    (m.model||'').toLowerCase().includes(kw) ||
-    (m.series||'').toLowerCase().includes(kw) ||
-    (m.version||'').toLowerCase().includes(kw));
-  if (cat) list = list.filter(m => (m.category||'').includes(cat));
-  if (st)  list = list.filter(m => getStockStatus(m) === st);
+  let list = [...allMaterials];
+
+  if (kw) {
+    list = list.filter(m =>
+      (m.name || '').toLowerCase().includes(kw) ||
+      (m.model || '').toLowerCase().includes(kw) ||
+      (m.series || '').toLowerCase().includes(kw) ||
+      (m.version || '').toLowerCase().includes(kw) ||
+      (m.code || '').toLowerCase().includes(kw) ||
+      (m.manager || '').toLowerCase().includes(kw)
+    );
+  }
+
+  if (cat) list = list.filter(m => (m.category || '').includes(cat));
+  if (st) list = list.filter(m => getStockStatus(m) === st);
+
+  filteredMaterials = list;
   renderTable(list);
+  syncHeaderCheckbox();
+  updateBulkActionBar();
 }
 
 /* ── 테이블 렌더 ── */
 function renderTable(list) {
-  const tbody   = document.getElementById('materialsTableBody');
+  const tbody = document.getElementById('materialsTableBody');
   const countEl = document.getElementById('totalCount');
   if (!tbody) return;
+
   if (countEl) countEl.textContent = `${list.length}건`;
 
   if (!list.length) {
-    tbody.innerHTML =
-      `<tr><td colspan="9" style="text-align:center;padding:40px;color:#888;">
-        <i class="fas fa-inbox"></i> 등록된 자재가 없습니다.</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center;padding:40px;color:#888;">
+          <i class="fas fa-inbox"></i> 등록된 자재가 없습니다.
+        </td>
+      </tr>`;
     return;
   }
 
   tbody.innerHTML = list.map(m => {
     const st = getStockStatus(m);
+    const checked = selectedMaterialIds.has(m.id) ? 'checked' : '';
     const badgeMap = {
-      ok:       '<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">정상</span>',
-      low:      '<span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">부족</span>',
+      ok: '<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">정상</span>',
+      low: '<span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">부족</span>',
       critical: '<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">재고없음</span>'
     };
-    return `<tr>
-      <td><strong>${esc(m.name)}</strong></td>
-      <td>${esc(m.model   ||'-')}</td>
-      <td>${esc(m.series  ||'-')}</td>
-      <td>${esc(m.version ||'-')}</td>
-      <td>${esc(m.category||'-')}</td>
-      <td>${esc(m.manager ||'-')}</td>
-      <td style="text-align:center;">
-        <strong>${m.current_stock??0}</strong>
-        <small style="color:#888;"> ${esc(m.unit||'EA')}</small>
-      </td>
-      <td>${badgeMap[st] || badgeMap.ok}</td>
-      <td>
-        <div class="btn-group">
-          <button class="btn btn-sm btn-outline" onclick="showBarcode('${m.id}')" title="바코드">
-            <i class="fas fa-barcode"></i></button>
-          <button class="btn btn-sm btn-primary" onclick="openModal('${m.id}')" title="수정">
-            <i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="deleteMaterial('${m.id}')" title="삭제">
-            <i class="fas fa-trash"></i></button>
-        </div>
-      </td></tr>`;
+
+    return `
+      <tr>
+        <td style="text-align:center">
+          <input type="checkbox" ${checked} onchange="toggleMaterialSelection('${m.id}', this.checked)">
+        </td>
+        <td>
+          <strong>${esc(m.name)}</strong>
+          ${m.code ? `<div style="font-size:11px;color:#888;margin-top:3px">${esc(m.code)}</div>` : ''}
+        </td>
+        <td>${esc(m.model || '-')}</td>
+        <td>${esc(m.series || '-')}</td>
+        <td>${esc(m.version || '-')}</td>
+        <td>${esc(m.category || '-')}</td>
+        <td>${esc(m.manager || '-')}</td>
+        <td style="text-align:center;">
+          <strong>${m.current_stock ?? 0}</strong>
+          <small style="color:#888;"> ${esc(m.unit || 'EA')}</small>
+        </td>
+        <td>${badgeMap[st] || badgeMap.ok}</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline" onclick="showBarcode('${m.id}')" title="바코드">
+              <i class="fas fa-barcode"></i>
+            </button>
+            <button class="btn btn-sm btn-primary" onclick="openModal('${m.id}')" title="수정">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMaterial('${m.id}')" title="삭제">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
   }).join('');
 }
+function toggleMaterialSelection(id, checked) {
+  if (checked) selectedMaterialIds.add(id);
+  else selectedMaterialIds.delete(id);
 
+  updateBulkActionBar();
+  syncHeaderCheckbox();
+}
+
+function toggleSelectAll(checked) {
+  filteredMaterials.forEach(m => {
+    if (checked) selectedMaterialIds.add(m.id);
+    else selectedMaterialIds.delete(m.id);
+  });
+
+  renderTable(filteredMaterials);
+  updateBulkActionBar();
+  syncHeaderCheckbox();
+}
+
+function clearSelection() {
+  selectedMaterialIds.clear();
+  renderTable(filteredMaterials);
+  updateBulkActionBar();
+  syncHeaderCheckbox();
+}
+
+function syncHeaderCheckbox() {
+  const el = document.getElementById('checkAllMaterials');
+  if (!el) return;
+
+  if (!filteredMaterials.length) {
+    el.checked = false;
+    el.indeterminate = false;
+    return;
+  }
+
+  const selectedInView = filteredMaterials.filter(m => selectedMaterialIds.has(m.id)).length;
+  el.checked = selectedInView > 0 && selectedInView === filteredMaterials.length;
+  el.indeterminate = selectedInView > 0 && selectedInView < filteredMaterials.length;
+}
+
+function updateBulkActionBar() {
+  const bar = document.getElementById('bulkActionBar');
+  const count = document.getElementById('selectedCount');
+  if (!bar || !count) return;
+
+  count.textContent = selectedMaterialIds.size;
+  bar.style.display = selectedMaterialIds.size ? 'flex' : 'none';
+}
+
+async function loadBulkManagerOptions() {
+  const sel = document.getElementById('bulkManager');
+  if (!sel) return;
+
+  try {
+    const handlers = await HandlerAPI.getAll();
+    sel.innerHTML = '<option value="">-- 선택 --</option>' +
+      handlers.map(h => `<option value="${esc(h.name)}">${esc(h.name)}</option>`).join('');
+  } catch (_) {}
+}
+
+function openBulkEditModal() {
+  if (!selectedMaterialIds.size) {
+    return showToast('수정할 자재를 먼저 선택하세요.', 'warning');
+  }
+
+  ['Series','Version','Category','Manager','Location','MinStock','Description'].forEach(key => {
+    const check = document.getElementById(`bulkUse${key}`);
+    if (check) check.checked = false;
+  });
+
+  document.getElementById('bulkSeries').value = '';
+  document.getElementById('bulkVersion').value = '';
+  document.getElementById('bulkCategory').value = '';
+  document.getElementById('bulkManager').value = '';
+  document.getElementById('bulkLocation').value = '';
+  document.getElementById('bulkMinStock').value = '';
+  document.getElementById('bulkDescription').value = '';
+
+  openOverlay('bulkEditModal');
+}
+
+function closeBulkEditModal() {
+  closeOverlay('bulkEditModal');
+}
+
+async function applyBulkEdit() {
+  const ids = [...selectedMaterialIds];
+  if (!ids.length) return showToast('선택된 자재가 없습니다.', 'warning');
+
+  const useSeries = document.getElementById('bulkUseSeries').checked;
+  const useVersion = document.getElementById('bulkUseVersion').checked;
+  const useCategory = document.getElementById('bulkUseCategory').checked;
+  const useManager = document.getElementById('bulkUseManager').checked;
+  const useLocation = document.getElementById('bulkUseLocation').checked;
+  const useMinStock = document.getElementById('bulkUseMinStock').checked;
+  const useDescription = document.getElementById('bulkUseDescription').checked;
+
+  if (![useSeries, useVersion, useCategory, useManager, useLocation, useMinStock, useDescription].some(Boolean)) {
+    return showToast('수정할 항목을 하나 이상 체크하세요.', 'warning');
+  }
+
+  const values = {
+    series: document.getElementById('bulkSeries').value.trim(),
+    version: document.getElementById('bulkVersion').value.trim(),
+    category: document.getElementById('bulkCategory').value.trim(),
+    manager: document.getElementById('bulkManager').value,
+    location: document.getElementById('bulkLocation').value.trim(),
+    min_stock: parseInt(document.getElementById('bulkMinStock').value, 10) || 0,
+    description: document.getElementById('bulkDescription').value.trim()
+  };
+
+  try {
+    showToast(`${ids.length}건 수정 중...`, 'info');
+
+    for (const id of ids) {
+      const old = allMaterials.find(m => m.id === id);
+      if (!old) continue;
+
+      const payload = {
+        ...old,
+        series: useSeries ? values.series : old.series,
+        version: useVersion ? values.version : old.version,
+        category: useCategory ? values.category : old.category,
+        manager: useManager ? values.manager : old.manager,
+        location: useLocation ? values.location : old.location,
+        min_stock: useMinStock ? values.min_stock : old.min_stock,
+        description: useDescription ? values.description : old.description
+      };
+
+      await MaterialAPI.save(payload);
+    }
+
+    closeBulkEditModal();
+    selectedMaterialIds.clear();
+    await loadMaterials();
+    showToast('선택 자재가 일괄 수정되었습니다.', 'success');
+  } catch (e) {
+    showToast('일괄 수정 실패: ' + e.message, 'error');
+  }
+}
 /* ── 카테고리 필터 옵션 ── */
 async function populateFilterCategory() {
   const sel = document.getElementById('filterCategory');
