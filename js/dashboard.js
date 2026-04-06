@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     key: 'name',
     order: 'asc'
   };
+  window._dashOpenSections = new Set(); // 추가
 
   await loadDashboard();
   document.getElementById('searchInput')?.addEventListener('input', filterDashboardTable);
@@ -279,7 +280,9 @@ function renderManufacturerSection(name, items) {
   const totalStock = items.reduce((sum, m) => sum + Number(m.current_stock || 0), 0);
   const lowCount = items.filter(m => getStockStatus(m) !== 'ok').length;
   const hasKeyword = !!(document.getElementById('searchInput')?.value || '').trim();
-  const isOpen = hasKeyword;
+
+  // 검색 중이면 자동 펼침, 아니면 사용자가 열어둔 상태 유지
+  const isOpen = hasKeyword || (window._dashOpenSections && window._dashOpenSections.has(sectionId));
 
   return `
     <div class="dash-maker-group ${isOpen ? 'open' : ''}" style="border:1px solid #e9ecef;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff">
@@ -305,7 +308,7 @@ function renderManufacturerSection(name, items) {
               <tr style="background:#fcfcfd">
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">자재코드</th>
                 <th
-                  onclick="setDashSort('name')"
+                  onclick="event.stopPropagation(); setDashSort('name')"
                   style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
                   title="자재명 정렬"
                 >
@@ -314,7 +317,7 @@ function renderManufacturerSection(name, items) {
                   </span>
                 </th>
                 <th
-                  onclick="setDashSort('category')"
+                  onclick="event.stopPropagation(); setDashSort('category')"
                   style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
                   title="카테고리 정렬"
                 >
@@ -326,7 +329,7 @@ function renderManufacturerSection(name, items) {
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">현재 재고</th>
                 <th style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666">최소 재고</th>
                 <th
-                  onclick="setDashSort('status')"
+                  onclick="event.stopPropagation(); setDashSort('status')"
                   style="padding:12px 14px;text-align:left;border-bottom:1px solid #eef1f4;color:#666;cursor:pointer;user-select:none"
                   title="상태 정렬"
                 >
@@ -381,16 +384,30 @@ function toggleDashManufacturer(sectionId, btn) {
   const body = document.getElementById(sectionId);
   if (!body) return;
 
+  if (!window._dashOpenSections) {
+    window._dashOpenSections = new Set();
+  }
+
   const isOpen = body.style.display === 'block';
-  body.style.display = isOpen ? 'none' : 'block';
+  const nextOpen = !isOpen;
+
+  body.style.display = nextOpen ? 'block' : 'none';
 
   const icon = btn.querySelector('.dash-maker-chevron');
   if (icon) {
-    icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    icon.style.transform = nextOpen ? 'rotate(180deg)' : 'rotate(0deg)';
   }
 
   const wrap = btn.closest('.dash-maker-group');
-  if (wrap) wrap.classList.toggle('open', !isOpen);
+  if (wrap) {
+    wrap.classList.toggle('open', nextOpen);
+  }
+
+  if (nextOpen) {
+    window._dashOpenSections.add(sectionId);
+  } else {
+    window._dashOpenSections.delete(sectionId);
+  }
 }
 
 function slugify(text) {
