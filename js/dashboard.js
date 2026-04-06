@@ -170,24 +170,45 @@ function compareDashItems(a, b) {
 
   let av = '';
   let bv = '';
-
-  if (sort.key === 'category') {
-    av = a.category || '';
-    bv = b.category || '';
-  } else if (sort.key === 'status') {
-    av = getStatusRank(getStockStatus(a));
-    bv = getStatusRank(getStockStatus(b));
-  } else {
-    av = a.name || '';
-    bv = b.name || '';
-  }
-
   let result = 0;
 
-  if (typeof av === 'number' && typeof bv === 'number') {
-    result = av - bv;
-  } else {
-    result = String(av).localeCompare(String(bv), 'ko');
+  switch (sort.key) {
+    case 'category':
+      av = a.category || '';
+      bv = b.category || '';
+      result = String(av).localeCompare(String(bv), 'ko');
+      break;
+
+    case 'status':
+      av = getStatusRank(getStockStatus(a));
+      bv = getStatusRank(getStockStatus(b));
+      result = av - bv;
+      break;
+
+    case 'updated':
+      av = new Date(a.updated_at || a.created_at || 0).getTime();
+      bv = new Date(b.updated_at || b.created_at || 0).getTime();
+      result = av - bv;
+      break;
+
+    case 'code':
+      av = a.code || '';
+      bv = b.code || '';
+      result = String(av).localeCompare(String(bv), 'ko');
+      break;
+
+    case 'stock':
+      av = Number(a.current_stock || 0);
+      bv = Number(b.current_stock || 0);
+      result = av - bv;
+      break;
+
+    case 'name':
+    default:
+      av = a.name || '';
+      bv = b.name || '';
+      result = String(av).localeCompare(String(bv), 'ko');
+      break;
   }
 
   if (result === 0) {
@@ -237,7 +258,9 @@ function renderFilteredDashboard() {
 }
 
 function renderDashTable(list) {
-  const tbody = document.getElementById('materialsTableBody');
+  const tbody =
+    document.getElementById('dashboardTableBody') ||
+    document.getElementById('materialsTableBody');
   if (!tbody) return;
 
   if (!list.length) {
