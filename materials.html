@@ -245,6 +245,70 @@
       margin-top: 4px;
     }
 
+    .materials-card-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+.materials-header-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex:1;
+  flex-wrap:wrap;
+}
+
+.manufacturer-tabs{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+  flex:1;
+}
+
+.maker-tab{
+  border:1.5px solid #dbe3ea;
+  background:#fff;
+  color:#445;
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:600;
+  font-family:'Noto Sans KR', sans-serif;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.maker-tab:hover{
+  background:#f4f8ff;
+  border-color:#90caf9;
+  color:#1565c0;
+}
+
+.maker-tab.active{
+  background:#1a1a2e;
+  color:#fff;
+  border-color:#1a1a2e;
+}
+
+@media (max-width: 900px){
+  .materials-header-right{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .manufacturer-tabs{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
     @media (max-width: 600px) {
       .msec .grid2 { grid-template-columns: 1fr; }
       .msec .grid3 { grid-template-columns: 1fr 1fr; }
@@ -346,16 +410,23 @@
   </div>
 
 </div>
-      <!-- 자재 목록 -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-list"></i> 자재 목록</h3>
-          <span class="badge" id="totalCount">0건</span>
-        </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
+<!-- 자재 목록 -->
+<div class="card">
+  <div class="card-header materials-card-header">
+    <h3 class="card-title"><i class="fas fa-list"></i> 자재 목록</h3>
+
+    <div class="materials-header-right">
+      <div id="manufacturerTabs" class="manufacturer-tabs">
+        <button type="button" class="maker-tab active" onclick="setManufacturerFilter('')">전체</button>
+      </div>
+      <span class="badge" id="totalCount">0건</span>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
   <th style="width:44px;text-align:center">
     <input type="checkbox" id="checkAllMaterials" onchange="toggleSelectAll(this.checked)">
   </th>
