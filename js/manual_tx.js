@@ -1,8 +1,10 @@
 /* =====================================================
    manual_tx.js - 입출고 수동 등록
+   카테고리 + 검색 필터 개선판
 ===================================================== */
 
-let _manualTxList = []; // 일괄 처리 목록
+let _manualTxList = [];
+let _manualMaterials = [];
 
 function openManualTxModal() {
   const existing = document.getElementById('manualTxModal');
@@ -15,13 +17,14 @@ function openManualTxModal() {
   modal.className = 'modal-overlay open';
   modal.style.zIndex = '3000';
   modal.innerHTML = `
-    <div class="modal" style="max-width:680px">
+    <div class="modal" style="max-width:760px">
       <div class="modal-header">
         <h3><i class="fas fa-edit"></i> 입출고 수동 등록</h3>
         <button class="modal-close" onclick="document.getElementById('manualTxModal').remove()">
           <i class="fas fa-times"></i>
         </button>
       </div>
+
       <div class="modal-body">
         <!-- 담당자 -->
         <div class="form-group">
@@ -33,9 +36,29 @@ function openManualTxModal() {
 
         <!-- 자재 추가 폼 -->
         <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px">
-          <div style="font-size:.85rem;font-weight:700;margin-bottom:10px;color:#1a1a2e">
+          <div style="font-size:.9rem;font-weight:700;margin-bottom:12px;color:#1a1a2e">
             <i class="fas fa-plus-circle" style="color:var(--success)"></i> 자재 추가
           </div>
+
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:8px">
+              <label style="font-size:.78rem">카테고리</label>
+              <select id="manualCategory" class="form-control" onchange="filterManualMaterials()">
+                <option value="">-- 전체 카테고리 --</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label style="font-size:.78rem">자재 검색</label>
+              <input
+                type="text"
+                id="manualSearch"
+                class="form-control"
+                placeholder="자재명 / 모델 / 코드 검색"
+                oninput="filterManualMaterials()"
+              >
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group" style="margin-bottom:8px">
               <label style="font-size:.78rem">자재 선택 <span class="required">*</span></label>
@@ -51,6 +74,11 @@ function openManualTxModal() {
               </select>
             </div>
           </div>
+
+          <div id="manualSelectedInfo"
+               style="display:none;margin-bottom:10px;padding:10px;border:1px solid #e9ecef;border-radius:8px;background:#fff">
+          </div>
+
           <div class="form-row">
             <div class="form-group" style="margin-bottom:8px">
               <label style="font-size:.78rem">수량 <span class="required">*</span></label>
@@ -62,10 +90,12 @@ function openManualTxModal() {
                 style="background:#f5f5f5;color:#888">
             </div>
           </div>
+
           <div class="form-group" style="margin-bottom:10px">
             <label style="font-size:.78rem">비고</label>
             <input type="text" id="manualNote" class="form-control" placeholder="메모 (선택)">
           </div>
+
           <button class="btn btn-success btn-sm" onclick="addManualTxItem()" style="width:100%">
             <i class="fas fa-plus"></i> 목록에 추가
           </button>
@@ -84,6 +114,7 @@ function openManualTxModal() {
           </div>
         </div>
       </div>
+
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="document.getElementById('manualTxModal').remove()">취소</button>
         <button class="btn btn-primary" onclick="submitManualTx()">
@@ -94,43 +125,127 @@ function openManualTxModal() {
 
   let _mbg = false;
   modal.addEventListener('mousedown', e => { _mbg = e.target === modal; });
-  modal.addEventListener('click', e => { if (e.target === modal && _mbg) modal.remove(); _mbg = false; });
+  modal.addEventListener('click', e => {
+    if (e.target === modal && _mbg) modal.remove();
+    _mbg = false;
+  });
+
   document.body.appendChild(modal);
 
-  // 담당자, 자재 로드
   Promise.all([HandlerAPI.getAll(), MaterialAPI.getAll()]).then(([handlers, materials]) => {
     const hSel = document.getElementById('manualHandler');
-    if (hSel) hSel.innerHTML = '<option value="">-- 담당자 선택 --</option>' +
-      handlers.map(h => `<option value="${esc(h.name)}">${esc(h.name)}${h.department ? ' (' + esc(h.department) + ')' : ''}</option>`).join('');
+    if (hSel) {
+      hSel.innerHTML =
+        '<option value="">-- 담당자 선택 --</option>' +
+        handlers.map(h =>
+          `<option value="${esc(h.name)}">${esc(h.name)}${h.department ? ' (' + esc(h.department) + ')' : ''}</option>`
+        ).join('');
+    }
 
-    const mSel = document.getElementById('manualMatSel');
-    window._manualMaterials = materials;
-    if (mSel) mSel.innerHTML = '<option value="">-- 자재 선택 --</option>' +
-      materials.map(m => `<option value="${m.id}">${esc(m.name)} (${esc(m.model || '-')})</option>`).join('');
+    _manualMaterials = materials || [];
 
-    // 마지막 담당자 복원
+    const catSel = document.getElementById('manualCategory');
+    if (catSel) {
+      const categories = [...new Set(_manualMaterials.map(m => (m.category || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'ko'));
+
+      catSel.innerHTML =
+        '<option value="">-- 전체 카테고리 --</option>' +
+        categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    }
+
+    filterManualMaterials();
+
     const last = localStorage.getItem('lastHandler');
     if (last && hSel) hSel.value = last;
   });
 }
 
+function filterManualMaterials() {
+  const cat = (document.getElementById('manualCategory')?.value || '').trim();
+  const kw = (document.getElementById('manualSearch')?.value || '').trim().toLowerCase();
+  const mSel = document.getElementById('manualMatSel');
+  if (!mSel) return;
+
+  let list = [..._manualMaterials];
+
+  if (cat) {
+    list = list.filter(m => (m.category || '').trim() === cat);
+  }
+
+  if (kw) {
+    list = list.filter(m =>
+      (m.name || '').toLowerCase().includes(kw) ||
+      (m.model || '').toLowerCase().includes(kw) ||
+      (m.code || '').toLowerCase().includes(kw) ||
+      (m.series || '').toLowerCase().includes(kw) ||
+      (m.version || '').toLowerCase().includes(kw)
+    );
+  }
+
+  mSel.innerHTML =
+    '<option value="">-- 자재 선택 --</option>' +
+    list.map(m => `
+      <option value="${m.id}">
+        ${esc(m.name)}
+        ${m.model ? ' / ' + esc(m.model) : ''}
+        ${m.code ? ' / [' + esc(m.code) + ']' : ''}
+      </option>
+    `).join('');
+
+  document.getElementById('manualCurStock').value = '';
+  const info = document.getElementById('manualSelectedInfo');
+  if (info) {
+    info.style.display = 'none';
+    info.innerHTML = '';
+  }
+}
+
 function onManualMatChange() {
   const id = document.getElementById('manualMatSel')?.value;
-  const mat = (window._manualMaterials || []).find(m => m.id === id);
-  const el = document.getElementById('manualCurStock');
-  if (el) el.value = mat ? `${mat.current_stock} ${mat.unit || 'EA'}` : '';
+  const mat = _manualMaterials.find(m => m.id === id);
+
+  const stockEl = document.getElementById('manualCurStock');
+  if (stockEl) {
+    stockEl.value = mat ? `${mat.current_stock} ${mat.unit || 'EA'}` : '';
+  }
+
+  const info = document.getElementById('manualSelectedInfo');
+  if (!info) return;
+
+  if (!mat) {
+    info.style.display = 'none';
+    info.innerHTML = '';
+    return;
+  }
+
+  const lowStyle = getStockStatus(mat) !== 'ok'
+    ? 'color:var(--danger);font-weight:700;'
+    : 'color:#333;font-weight:600;';
+
+  info.style.display = 'block';
+  info.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;font-size:.82rem">
+      <div><strong>자재명:</strong> ${esc(mat.name || '-')}</div>
+      <div><strong>자재코드:</strong> ${esc(mat.code || '-')}</div>
+      <div><strong>모델:</strong> ${esc(mat.model || '-')}</div>
+      <div><strong>카테고리:</strong> ${esc(mat.category || '-')}</div>
+      <div><strong>담당자:</strong> ${esc(mat.manager || '-')}</div>
+      <div><strong>현재 재고:</strong> <span style="${lowStyle}">${mat.current_stock} ${esc(mat.unit || 'EA')}</span></div>
+    </div>
+  `;
 }
 
 function addManualTxItem() {
   const matId = document.getElementById('manualMatSel')?.value;
   const type = document.getElementById('manualType')?.value;
-  const qty = parseInt(document.getElementById('manualQty')?.value) || 0;
+  const qty = parseInt(document.getElementById('manualQty')?.value, 10) || 0;
   const note = document.getElementById('manualNote')?.value.trim() || '';
 
   if (!matId) return showToast('자재를 선택하세요', 'warning');
   if (qty <= 0) return showToast('수량을 입력하세요', 'warning');
 
-  const mat = (window._manualMaterials || []).find(m => m.id === matId);
+  const mat = _manualMaterials.find(m => m.id === matId);
   if (!mat) return showToast('자재를 찾을 수 없습니다', 'error');
 
   if (type === 'out' && mat.current_stock < qty) {
@@ -140,17 +255,23 @@ function addManualTxItem() {
   _manualTxList.push({ mat, type, qty, note });
   renderManualTxList();
 
-  // 초기화
   document.getElementById('manualMatSel').value = '';
   document.getElementById('manualQty').value = '1';
   document.getElementById('manualNote').value = '';
   document.getElementById('manualCurStock').value = '';
+
+  const info = document.getElementById('manualSelectedInfo');
+  if (info) {
+    info.style.display = 'none';
+    info.innerHTML = '';
+  }
 }
 
 function renderManualTxList() {
   const wrap = document.getElementById('manualTxListWrap');
   const countEl = document.getElementById('manualTxCount');
   if (!wrap) return;
+
   if (countEl) countEl.textContent = `${_manualTxList.length}개`;
 
   if (!_manualTxList.length) {
@@ -159,11 +280,17 @@ function renderManualTxList() {
   }
 
   wrap.innerHTML = _manualTxList.map((item, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${item.type === 'in' ? '#f0fff4' : '#fffde7'};margin-bottom:6px;border:1px solid ${item.type === 'in' ? '#a5d6a7' : '#fff176'}">
-      <span class="type-${item.type}" style="flex-shrink:0">${item.type === 'in' ? '입고' : '출고'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.85rem;font-weight:600">${esc(item.mat.name)}</div>
-        <div style="font-size:.75rem;color:#888">${esc(item.mat.model || '-')} · 수량: ${item.qty} · ${item.note || '-'}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #e9ecef;border-radius:8px;margin-bottom:8px;background:#fff">
+      <div style="flex:1">
+        <div style="font-size:.84rem;font-weight:700;color:#1a1a2e">
+          [${item.type === 'in' ? '입고' : '출고'}] ${esc(item.mat.name)}
+        </div>
+        <div style="font-size:.75rem;color:#666;margin-top:2px">
+          ${esc(item.mat.category || '-')} · ${esc(item.mat.model || '-')} · 수량: ${item.qty}
+        </div>
+        <div style="font-size:.74rem;color:#888;margin-top:2px">
+          비고: ${esc(item.note || '-')}
+        </div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="removeManualTxItem(${i})" style="flex-shrink:0">
         <i class="fas fa-times"></i>
@@ -184,7 +311,7 @@ async function submitManualTx() {
 
   try {
     localStorage.setItem('lastHandler', handler);
-    showToast(`${_manualTxList.length}건 처리 중...`, 'info');
+    showToast(`${_manualTxList.length}건 처리 중.`, 'info');
 
     for (const item of _manualTxList) {
       const newStock = item.type === 'in'
@@ -200,12 +327,13 @@ async function submitManualTx() {
         handler,
         note: item.note
       });
-      // 로컬 재고 갱신
+
       item.mat.current_stock = newStock;
     }
 
     showToast(`${_manualTxList.length}건 처리 완료!`, 'success');
     document.getElementById('manualTxModal')?.remove();
+
     if (typeof loadDashboard === 'function') await loadDashboard();
     if (typeof loadTransactions === 'function') await loadTransactions();
     if (typeof loadMaterials === 'function') await loadMaterials();
