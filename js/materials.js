@@ -22,16 +22,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadMaterials() {
   const tbody = document.getElementById('materialsTableBody');
   if (tbody) tbody.innerHTML =
-  `<tr><td colspan="9" style="text-align:center;padding:40px;color:red;">
-    <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
+    `<tr><td colspan="10" style="text-align:center;padding:40px;color:#888;">
+      <i class="fas fa-spinner fa-spin"></i> 불러오는 중...</td></tr>`;
   try {
     allMaterials = await MaterialAPI.getAll();
     await populateFilterCategory();
     applyFilter();
   } catch (e) {
     if (tbody) tbody.innerHTML =
-  `<tr><td colspan="10" style="text-align:center;padding:40px;color:red;">
-    <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
+      `<tr><td colspan="10" style="text-align:center;padding:40px;color:red;">
+        <i class="fas fa-exclamation-circle"></i> 오류: ${e.message}</td></tr>`;
   }
 }
 /* ── 카테고리 필터 옵션 (알파벳/가나다 정렬) ── */
