@@ -147,20 +147,20 @@ function previewImport(e) {
       const cols = parseCSVLine(lines[i]);
       if (!cols[1]?.trim()) continue;
       _importData.push({
-  code: cols[0]?.trim() || '',
-  name: cols[1]?.trim() || '',
-  model: cols[2]?.trim() || '',
-  version: cols[3]?.trim() || '',
-  category: cols[4]?.trim() || '',
-  location: cols[5]?.trim() || '',
-  current_stock: Number(cols[6] || 0),
-  min_stock: Number(cols[7] || 0),
-  unit: cols[8]?.trim() || 'EA',
-  barcode: cols[9]?.trim() || '',
-  manufacture_date: cols[10]?.trim() || null,
-  manager: cols[11]?.trim() || '',
-  description: cols[12]?.trim() || ''
-});
+       code: cols[0]?.trim() || '',
+       name: cols[1]?.trim() || '',
+       model: cols[2]?.trim() || '',
+       version: cols[3]?.trim() || '',
+       category: cols[4]?.trim() || '',
+       location: cols[5]?.trim() || '',
+       current_stock: Number(cols[6] || 0),
+        min_stock: Number(cols[7] || 0),
+        unit: cols[8]?.trim() || 'EA',
+        barcode: cols[9]?.trim() || '',
+        manufacture_date: cols[10]?.trim() || null,
+        manager: cols[11]?.trim() || '',
+       description: cols[12]?.trim() || ''
+      });
     }
 
     const preview = document.getElementById('importPreview');
