@@ -301,15 +301,32 @@
     <i class="fas fa-search"></i>
     <input type="text" id="searchInput" placeholder="자재명, 모델, 시리즈, 버전 검색..."/>
   </div>
+
   <select id="filterCategory" onchange="applyFilter()">
     <option value="">전체 카테고리</option>
   </select>
+
   <select id="filterStatus" onchange="applyFilter()">
     <option value="">전체 상태</option>
     <option value="ok">정상</option>
     <option value="low">부족</option>
     <option value="critical">재고없음</option>
   </select>
+
+  <select id="sortBy" onchange="applyFilter()">
+    <option value="name">정렬: 자재명</option>
+    <option value="code">정렬: 자재코드</option>
+    <option value="category">정렬: 카테고리</option>
+    <option value="manager">정렬: 담당자</option>
+    <option value="stock">정렬: 현재재고</option>
+    <option value="updated">정렬: 최근수정</option>
+  </select>
+
+  <select id="sortOrder" onchange="applyFilter()">
+    <option value="asc">오름차순</option>
+    <option value="desc">내림차순</option>
+  </select>
+
   <button class="btn btn-primary" onclick="openModal()">
     <i class="fas fa-plus"></i> 자재 등록
   </button>

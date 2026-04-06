@@ -37,15 +37,35 @@
       <div class="card-header">
         <h2><i class="fas fa-clipboard-list"></i> 재고 현황</h2>
         <div class="card-actions">
-          <input type="text" id="searchInput" placeholder="자재명 검색..." class="search-input">
-          <select id="filterStatus" class="filter-select">
-            <option value="">전체 상태</option>
-            <option value="ok">정상</option>
-            <option value="low">부족</option>
-            <option value="critical">없음</option>
-          </select>
-          <button class="btn btn-outline btn-sm" onclick="loadInventory()"><i class="fas fa-sync"></i></button>
-        </div>
+  <input type="text" id="searchInput" placeholder="자재명 / 자재코드 / 카테고리 / 위치 검색..." class="search-input">
+
+  <select id="filterStatus" class="filter-select">
+    <option value="">전체 상태</option>
+    <option value="ok">정상</option>
+    <option value="low">부족</option>
+    <option value="critical">없음</option>
+  </select>
+
+  <select id="sortBy" class="filter-select">
+    <option value="name">정렬: 자재명</option>
+    <option value="code">정렬: 자재코드</option>
+    <option value="category">정렬: 카테고리</option>
+    <option value="location">정렬: 위치</option>
+    <option value="stock">정렬: 현재고</option>
+    <option value="min_stock">정렬: 최소재고</option>
+    <option value="updated">정렬: 최근 입출고</option>
+    <option value="status">정렬: 상태</option>
+  </select>
+
+  <select id="sortOrder" class="filter-select">
+    <option value="asc">오름차순</option>
+    <option value="desc">내림차순</option>
+  </select>
+
+  <button class="btn btn-outline btn-sm" onclick="loadInventory()">
+    <i class="fas fa-sync"></i>
+  </button>
+</div>
       </div>
       <div class="card-body" style="padding:0">
         <div class="table-responsive">
