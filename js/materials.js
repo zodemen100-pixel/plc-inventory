@@ -9,6 +9,10 @@ let editingId = null;
 let catTree = [];
 let manufacturerMap = {};
 let selectedManufacturer = '';
+let headerSortState = {
+  key: '',
+  order: 'asc'
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadManufacturerMap();
@@ -98,7 +102,48 @@ function setManufacturerFilter(maker) {
   renderManufacturerTabs();
   applyFilter();
 }
+function setHeaderSort(key) {
+  if (headerSortState.key === key) {
+    headerSortState.order = headerSortState.order === 'asc' ? 'desc' : 'asc';
+  } else {
+    headerSortState.key = key;
+    headerSortState.order = 'asc';
+  }
 
+  const sortByEl = document.getElementById('sortBy');
+  const sortOrderEl = document.getElementById('sortOrder');
+
+  if (sortByEl) {
+    if (key === 'status') {
+      sortByEl.value = 'name';
+    } else {
+      sortByEl.value = key;
+    }
+  }
+
+  if (sortOrderEl) {
+    sortOrderEl.value = headerSortState.order;
+  }
+
+  applyFilter();
+}
+
+function getHeaderSortIcon(key) {
+  if (headerSortState.key !== key) {
+    return '<i class="fas fa-sort" style="font-size:12px;color:#9aa4b2;"></i>';
+  }
+
+  return headerSortState.order === 'asc'
+    ? '<i class="fas fa-sort-up" style="font-size:12px;color:#1565c0;"></i>'
+    : '<i class="fas fa-sort-down" style="font-size:12px;color:#1565c0;"></i>';
+}
+
+function getStatusRank(material) {
+  const st = getStockStatus(material);
+  if (st === 'critical') return 0;
+  if (st === 'low') return 1;
+  return 2;
+}
 /* ─────────────────────────────────────────
    자재 목록
 ───────────────────────────────────────── */
@@ -154,8 +199,11 @@ function applyFilter() {
   const kw = (document.getElementById('searchInput')?.value || '').toLowerCase();
   const cat = document.getElementById('filterCategory')?.value || '';
   const st = document.getElementById('filterStatus')?.value || '';
-  const sortBy = document.getElementById('sortBy')?.value || 'name';
-  const sortOrder = document.getElementById('sortOrder')?.value || 'asc';
+  const sortBySelect = document.getElementById('sortBy')?.value || 'name';
+  const sortOrderSelect = document.getElementById('sortOrder')?.value || 'asc';
+
+  const activeSortKey = headerSortState.key || sortBySelect;
+  const activeSortOrder = headerSortState.key ? headerSortState.order : sortOrderSelect;
 
   let list = [...allMaterials];
 
@@ -180,46 +228,61 @@ function applyFilter() {
   list.sort((a, b) => {
     let av = '';
     let bv = '';
+    let result = 0;
 
-    switch (sortBy) {
+    switch (activeSortKey) {
       case 'code':
         av = a.code || '';
         bv = b.code || '';
+        result = String(av).localeCompare(String(bv), 'ko');
         break;
+
       case 'category':
         av = a.category || '';
         bv = b.category || '';
+        result = String(av).localeCompare(String(bv), 'ko');
         break;
+
       case 'manager':
         av = a.manager || '';
         bv = b.manager || '';
+        result = String(av).localeCompare(String(bv), 'ko');
         break;
+
       case 'stock':
         av = Number(a.current_stock || 0);
         bv = Number(b.current_stock || 0);
+        result = av - bv;
         break;
+
       case 'updated':
         av = new Date(a.updated_at || a.created_at || 0).getTime();
         bv = new Date(b.updated_at || b.created_at || 0).getTime();
+        result = av - bv;
         break;
+
+      case 'status':
+        av = getStatusRank(a);
+        bv = getStatusRank(b);
+        result = av - bv;
+        break;
+
+      case 'name':
       default:
         av = a.name || '';
         bv = b.name || '';
+        result = String(av).localeCompare(String(bv), 'ko');
         break;
-    }
-
-    let result = 0;
-    if (typeof av === 'number' && typeof bv === 'number') {
-      result = av - bv;
-    } else {
-      result = String(av).localeCompare(String(bv), 'ko');
     }
 
     if (result === 0) {
       result = String(a.name || '').localeCompare(String(b.name || ''), 'ko');
     }
+    if (result === 0) {
+      result = String(a.code || '').localeCompare(String(b.code || ''), 'ko');
+    }
 
-    return sortOrder === 'desc' ? -result : result;
+    return activeSortOrder === 'desc' ? -result : result;
   });
 
   filteredMaterials = list;
@@ -233,6 +296,36 @@ function renderTable(list) {
   const tbody = document.getElementById('materialsTableBody');
   const countEl = document.getElementById('totalCount');
   if (!tbody) return;
+
+    const theadRow = document.querySelector('.table thead tr');
+  if (theadRow) {
+    theadRow.innerHTML = `
+      <th style="width:44px;text-align:center">
+        <input type="checkbox" id="checkAllMaterials" onchange="toggleSelectAll(this.checked)">
+      </th>
+      <th style="cursor:pointer;user-select:none" onclick="setHeaderSort('name')">
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          자재명 ${getHeaderSortIcon('name')}
+        </span>
+      </th>
+      <th>모델</th>
+      <th>시리즈</th>
+      <th>버전</th>
+      <th style="cursor:pointer;user-select:none" onclick="setHeaderSort('category')">
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          카테고리 ${getHeaderSortIcon('category')}
+        </span>
+      </th>
+      <th>담당자</th>
+      <th>재고</th>
+      <th style="cursor:pointer;user-select:none" onclick="setHeaderSort('status')">
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          상태 ${getHeaderSortIcon('status')}
+        </span>
+      </th>
+      <th>작업</th>
+    `;
+  }
 
   if (countEl) countEl.textContent = `${list.length}건`;
 
