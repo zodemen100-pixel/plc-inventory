@@ -136,30 +136,52 @@ let _importData = [];
 function previewImport(e) {
   const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = ev => {
-    const text = ev.target.result.replace(/^\uFEFF/, '');
+    let text = '';
+
+    try {
+      const buffer = ev.target.result;
+      const bytes = new Uint8Array(buffer);
+
+      try {
+        text = new TextDecoder('utf-8').decode(bytes);
+        if (text.includes('�')) {
+          text = new TextDecoder('euc-kr').decode(bytes);
+        }
+      } catch (_) {
+        text = new TextDecoder('euc-kr').decode(bytes);
+      }
+
+      text = text.replace(/^\uFEFF/, '');
+    } catch (err) {
+      showToast('파일 읽기 실패: ' + err.message, 'error');
+      return;
+    }
+
     const lines = text.split('\n').filter(l => l.trim());
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     _importData = [];
 
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
       if (!cols[1]?.trim()) continue;
+
       _importData.push({
-       code: cols[0]?.trim() || '',
-       name: cols[1]?.trim() || '',
-       model: cols[2]?.trim() || '',
-       version: cols[3]?.trim() || '',
-       category: cols[4]?.trim() || '',
-       location: cols[5]?.trim() || '',
-       current_stock: Number(cols[6] || 0),
-        min_stock: Number(cols[7] || 0),
+        code: cols[0]?.trim() || '',
+        name: cols[1]?.trim() || '',
+        model: cols[2]?.trim() || '',
+        version: cols[3]?.trim() || '',
+        category: cols[4]?.trim() || '미분류',
+        location: cols[5]?.trim() || '',
+        current_stock: parseInt(cols[6]) || 0,
+        min_stock: parseInt(cols[7]) || 1,
         unit: cols[8]?.trim() || 'EA',
         barcode: cols[9]?.trim() || null,
         manufacture_date: cols[10]?.trim() || null,
         manager: cols[11]?.trim() || '',
-       description: cols[12]?.trim() || ''
+        description: cols[12]?.trim() || '',
+        status: 'active'
       });
     }
 
@@ -168,17 +190,19 @@ function previewImport(e) {
       preview.innerHTML = '<p style="color:red">읽을 수 있는 데이터가 없습니다.</p>';
       return;
     }
+
     preview.innerHTML = `
       <div style="background:#f0fff4;border:1px solid #a5d6a7;border-radius:8px;padding:10px;font-size:.82rem">
         <i class="fas fa-check-circle" style="color:var(--success)"></i>
         <strong>${_importData.length}개</strong> 자재를 가져올 준비가 되었습니다.
         <div style="margin-top:8px;max-height:120px;overflow-y:auto">
-          ${_importData.slice(0, 5).map(m => `<div style="padding:2px 0;color:#444">· ${m.name} (${m.model || '-'})</div>`).join('')}
-          ${_importData.length > 5 ? `<div style="color:#888">... 외 ${_importData.length - 5}개</div>` : ''}
+          ${_importData.slice(0, 5).map(m => `<div style="padding:2px 0;color:#444">· ${m.name} / 담당자: ${m.manager || '-'}</div>`).join('')}
+          ${_importData.length > 5 ? `<div style="color:#888">외 ${_importData.length - 5}개</div>` : ''}
         </div>
       </div>`;
   };
-  reader.readAsText(file, 'UTF-8');
+
+  reader.readAsArrayBuffer(file);
 }
 
 function parseCSVLine(line) {
@@ -211,7 +235,8 @@ async function doImport() {
       const mat = {
         ...row,
         id: existing?.id || uuid(),
-        code: code,
+        code,
+        barcode: row.barcode || null,
         status: 'active'
       };
 

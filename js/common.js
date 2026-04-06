@@ -122,7 +122,7 @@ const MaterialAPI={
 
   if (error) throw error;
   return data;
-  },
+},
 
   async save(mat){
   const { data, error } = await sb
