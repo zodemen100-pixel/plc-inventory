@@ -193,8 +193,10 @@ function filterManualMaterials() {
     return `
       <option value="${m.id}">
         ${esc(m.name)}
-        ${m.model ? ' / ' + esc(m.model) : ''}
-        [${esc(m.series || '-')},${esc(m.version || '-')},${esc(manufactureYm)}]
+        ${m.model ? ' / ' + esc(m.model) : ' / -'}
+        / ${esc(m.series || '-')}
+        / ${esc(m.version || '-')}
+        / ${esc(manufactureYm)}
       </option>
     `;
   }).join('');
