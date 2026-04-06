@@ -317,6 +317,21 @@ async function submitManualTx() {
   if (!handler) return showToast('담당자를 선택하세요', 'warning');
   if (!_manualTxList.length) return showToast('처리할 항목이 없습니다', 'warning');
 
+  const outList = _manualTxList.filter(item => item.type === 'out');
+
+  if (outList.length) {
+    const confirmMsg = outList.map(item => {
+      const afterStock = Math.max(0, item.mat.current_stock - item.qty);
+      return `- ${item.mat.name} / 현재 ${item.mat.current_stock}${item.mat.unit || 'EA'} → 처리 후 ${afterStock}${item.mat.unit || 'EA'} / 출고 ${item.qty}${item.mat.unit || 'EA'}`;
+    }).join('\n');
+
+    const ok = confirm(
+      `[출고 최종 확인]\n\n담당자: ${handler}\n출고 항목: ${outList.length}건\n\n${confirmMsg}\n\n계속 진행할까요?`
+    );
+
+    if (!ok) return;
+  }
+
   try {
     localStorage.setItem('lastHandler', handler);
     showToast(`${_manualTxList.length}건 처리 중.`, 'info');
