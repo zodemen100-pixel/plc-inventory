@@ -281,11 +281,16 @@ async function applyBulkEdit() {
 async function populateFilterCategory() {
   const sel = document.getElementById('filterCategory');
   if (!sel) return;
-  const cats = [...new Set(allMaterials.map(m => m.category).filter(Boolean))];
+
+  const cats = [...new Set(allMaterials.map(m => m.category).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'ko'));
+
   sel.innerHTML = '<option value="">전체 카테고리</option>';
   cats.forEach(c => {
     const o = document.createElement('option');
-    o.value = c; o.textContent = c; sel.appendChild(o);
+    o.value = c;
+    o.textContent = c;
+    sel.appendChild(o);
   });
 }
 
