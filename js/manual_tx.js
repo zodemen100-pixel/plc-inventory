@@ -184,14 +184,20 @@ function filterManualMaterials() {
   }
 
   mSel.innerHTML =
-    '<option value="">-- 자재 선택 --</option>' +
-    list.map(m => `
+  '<option value="">-- 자재 선택 --</option>' +
+  list.map(m => {
+    const manufactureYm = m.manufacture_date
+      ? String(m.manufacture_date).slice(0, 7).replace('-', '.')
+      : '-';
+
+    return `
       <option value="${m.id}">
         ${esc(m.name)}
         ${m.model ? ' / ' + esc(m.model) : ''}
-        ${m.code ? ' / [' + esc(m.code) + ']' : ''}
+        [${esc(m.series || '-')},${esc(m.version || '-')},${esc(manufactureYm)}]
       </option>
-    `).join('');
+    `;
+  }).join('');
 
   document.getElementById('manualCurStock').value = '';
   const info = document.getElementById('manualSelectedInfo');
