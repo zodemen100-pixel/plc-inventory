@@ -10,6 +10,7 @@
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <div class="logo">
@@ -20,6 +21,7 @@
       <i class="fas fa-bars"></i>
     </button>
   </div>
+
   <ul class="sidebar-menu">
     <li class="menu-item active"><a href="index.html"><i class="fas fa-tachometer-alt"></i><span>대시보드</span></a></li>
     <li class="menu-item"><a href="materials.html"><i class="fas fa-boxes"></i><span>자재 관리</span></a></li>
@@ -29,150 +31,201 @@
     <li class="menu-item"><a href="categories.html"><i class="fas fa-sitemap"></i><span>카테고리 관리</span></a></li>
     <li class="menu-item"><a href="handlers.html"><i class="fas fa-users"></i><span>담당자 관리</span></a></li>
   </ul>
+
   <div class="sidebar-footer"><span>v1.0.0</span></div>
 </nav>
 
 <main class="main-content" id="mainContent">
-  <header class="topbar">
+  <header class="topbar dashboard-topbar">
     <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
       <i class="fas fa-bars"></i>
     </button>
+
     <div class="topbar-title">
       <h1><i class="fas fa-tachometer-alt"></i> 대시보드</h1>
     </div>
+
     <div class="topbar-actions">
       <span class="date-badge" id="currentDate"></span>
-      <a href="scan.html" class="btn btn-primary">
+      <a href="scan.html" class="btn btn-primary dashboard-scan-btn">
         <i class="fas fa-barcode"></i> 바코드 스캔
       </a>
     </div>
   </header>
 
-  <div class="content-area">
+  <div class="content-area dashboard-page">
     <!-- 통계 카드 -->
-    <div class="stats-grid">
-      <div class="stat-card stat-total">
+    <section class="stats-grid dashboard-stats-grid">
+      <div class="stat-card stat-total dashboard-stat-card">
         <div class="stat-icon"><i class="fas fa-boxes"></i></div>
-        <div class="stat-info"><h3 id="totalMaterials">-</h3><p>전체 자재 종류</p></div>
+        <div class="stat-info">
+          <h3 id="totalMaterials">-</h3>
+          <p>전체 자재 종류</p>
+        </div>
       </div>
-      <div class="stat-card stat-in">
-        <div class="stat-icon"><i class="fas fa-arrow-circle-down"></i></div>
-        <div class="stat-info"><h3 id="todayIn">-</h3><p>오늘 입고 건수</p></div>
-      </div>
-      <div class="stat-card stat-out">
-        <div class="stat-icon"><i class="fas fa-arrow-circle-up"></i></div>
-        <div class="stat-info"><h3 id="todayOut">-</h3><p>오늘 출고 건수</p></div>
-      </div>
-      <div class="stat-card stat-warning">
-        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="stat-info"><h3 id="lowStock">-</h3><p>재고 부족 자재</p></div>
-      </div>
-    </div>
 
-    <!-- 대시보드 그리드 -->
-    <div class="dashboard-grid">
-      <div class="card">
-        <div class="card-header">
+      <div class="stat-card stat-in dashboard-stat-card">
+        <div class="stat-icon"><i class="fas fa-arrow-circle-down"></i></div>
+        <div class="stat-info">
+          <h3 id="todayIn">-</h3>
+          <p>오늘 입고 건수</p>
+        </div>
+      </div>
+
+      <div class="stat-card stat-out dashboard-stat-card">
+        <div class="stat-icon"><i class="fas fa-arrow-circle-up"></i></div>
+        <div class="stat-info">
+          <h3 id="todayOut">-</h3>
+          <p>오늘 출고 건수</p>
+        </div>
+      </div>
+
+      <div class="stat-card stat-warning dashboard-stat-card">
+        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-info">
+          <h3 id="lowStock">-</h3>
+          <p>재고 부족 자재</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 빠른 작업 -->
+    <section class="dashboard-quick-actions">
+      <button class="btn btn-outline dashboard-action-btn" onclick="exportMaterialsExcel()">
+        <i class="fas fa-file-excel" style="color:#217346"></i> 자재목록 엑셀
+      </button>
+
+      <button class="btn btn-outline dashboard-action-btn" onclick="exportTransactionsExcel()">
+        <i class="fas fa-file-excel" style="color:#217346"></i> 입출고 엑셀
+      </button>
+
+      <button class="btn btn-outline dashboard-action-btn" onclick="importMaterialsExcel()">
+        <i class="fas fa-file-upload" style="color:#1565c0"></i> 엑셀 가져오기
+      </button>
+
+      <button class="btn btn-outline dashboard-action-btn" onclick="openManualTxModal()">
+        <i class="fas fa-edit" style="color:var(--warning)"></i> 수동 입출고
+      </button>
+
+      <button class="btn btn-outline dashboard-action-btn" onclick="openLabelModal()">
+        <i class="fas fa-print" style="color:var(--primary)"></i> 라벨 출력
+      </button>
+    </section>
+
+    <!-- 상단 2단 -->
+    <section class="dashboard-grid dashboard-grid-tight">
+      <div class="card dashboard-card dashboard-card-fill">
+        <div class="card-header dashboard-card-header">
           <h2><i class="fas fa-exclamation-triangle text-warning"></i> 재고 부족 경고</h2>
           <a href="inventory.html" class="btn-link">전체 보기 →</a>
         </div>
-        <div class="card-body">
-          <div id="lowStockList" class="alert-list">
+        <div class="card-body dashboard-card-body">
+          <div id="lowStockList" class="alert-list dashboard-alert-list">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header">
+
+      <div class="card dashboard-card dashboard-card-fill">
+        <div class="card-header dashboard-card-header">
           <h2><i class="fas fa-history text-primary"></i> 최근 입출고 이력</h2>
           <a href="transactions.html" class="btn-link">전체 보기 →</a>
         </div>
-        <div class="card-body">
-          <div id="recentTransactions" class="transaction-list">
+        <div class="card-body dashboard-card-body">
+          <div id="recentTransactions" class="transaction-list dashboard-transaction-list">
             <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-<!-- 엑셀/수동등록 버튼 -->
-<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-  <button class="btn btn-outline" onclick="exportMaterialsExcel()">
-    <i class="fas fa-file-excel" style="color:#217346"></i> 자재목록 엑셀
-  </button>
-  <button class="btn btn-outline" onclick="exportTransactionsExcel()">
-    <i class="fas fa-file-excel" style="color:#217346"></i> 입출고 엑셀
-  </button>
-  <button class="btn btn-outline" onclick="importMaterialsExcel()">
-    <i class="fas fa-file-upload" style="color:#1565c0"></i> 엑셀 가져오기
-  </button>
-  <button class="btn btn-outline" onclick="openManualTxModal()">
-    <i class="fas fa-edit" style="color:var(--warning)"></i> 수동 입출고
-  </button>
-  <button class="btn btn-outline" onclick="openLabelModal()">
-    <i class="fas fa-print" style="color:var(--primary)"></i> 라벨 출력
-  </button>
-</div>
-
-<!-- TOP 10 카드 -->
-<div class="card" style="margin-bottom:20px">
-  <div class="card-header">
-    <h2><i class="fas fa-trophy" style="color:#f59e0b"></i> 자주 사용되는 자재 TOP 10</h2>
-    <button class="btn btn-outline btn-sm" onclick="loadTop10()"><i class="fas fa-sync"></i></button>
-  </div>
-  <div class="card-body">
-    <div id="top10List">
-      <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
-    </div>
-  </div>
-</div>
-
-    <!-- 전체 재고 현황 -->
-    <div class="card">
-      <div class="card-header">
-        <h2><i class="fas fa-clipboard-list text-success"></i> 전체 재고 현황</h2>
-        <div class="card-actions">
-          <input type="text" id="searchInput" placeholder="자재명 검색..." class="search-input">
-          <button class="btn btn-success btn-sm" onclick="location.href='materials.html'">
-            <i class="fas fa-plus"></i> 자재 등록
+    <!-- 하단 2단 -->
+    <section class="dashboard-bottom-grid">
+      <div class="card dashboard-card">
+        <div class="card-header dashboard-card-header">
+          <h2><i class="fas fa-trophy" style="color:#f59e0b"></i> 자주 사용되는 자재 TOP 10</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadTop10()">
+            <i class="fas fa-sync"></i>
           </button>
         </div>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>자재코드</th>
-                <th>자재명</th>
-                <th>카테고리</th>
-                <th>위치</th>
-                <th>현재 재고</th>
-                <th>최소 재고</th>
-                <th>상태</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody id="materialsTableBody">
-              <tr><td colspan="8" class="text-center">
-                <i class="fas fa-spinner fa-spin"></i>
-              </td></tr>
-            </tbody>
-          </table>
+        <div class="card-body dashboard-card-body dashboard-top10-body">
+          <div id="top10List">
+            <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div class="card dashboard-card">
+        <div class="card-header dashboard-card-header dashboard-stock-header">
+          <h2><i class="fas fa-clipboard-list text-success"></i> 전체 재고 현황</h2>
+
+          <div class="card-actions dashboard-stock-actions">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="자재명 / 자재코드 / 카테고리 / 위치 검색"
+              class="search-input dashboard-search-input"
+            >
+
+            <select id="filterStatus" class="filter-select">
+              <option value="">전체 상태</option>
+              <option value="ok">정상</option>
+              <option value="low">부족</option>
+              <option value="critical">재고없음</option>
+            </select>
+
+            <select id="sortBy" class="filter-select">
+              <option value="name">정렬: 자재명</option>
+              <option value="code">정렬: 자재코드</option>
+              <option value="category">정렬: 카테고리</option>
+              <option value="stock">정렬: 현재고</option>
+              <option value="updated">정렬: 최근수정</option>
+              <option value="status">정렬: 상태</option>
+            </select>
+
+            <select id="sortOrder" class="filter-select">
+              <option value="asc">오름차순</option>
+              <option value="desc">내림차순</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card-body dashboard-card-body dashboard-stock-body">
+          <div id="manufacturerTabs" class="manufacturer-tabs dashboard-maker-tabs"></div>
+
+          <div class="table-wrap dashboard-table-wrap">
+            <table class="table dashboard-table">
+              <thead>
+                <tr>
+                  <th>자재코드</th>
+                  <th onclick="setDashSort('name')" style="cursor:pointer">자재명 <span id="sort-name"></span></th>
+                  <th onclick="setDashSort('category')" style="cursor:pointer">카테고리 <span id="sort-category"></span></th>
+                  <th>현재고</th>
+                  <th>최소재고</th>
+                  <th onclick="setDashSort('status')" style="cursor:pointer">상태 <span id="sort-status"></span></th>
+                  <th onclick="setDashSort('updated')" style="cursor:pointer">최근수정 <span id="sort-updated"></span></th>
+                </tr>
+              </thead>
+              <tbody id="dashboardTableBody">
+                <tr>
+                  <td colspan="7" class="text-center">
+                    <i class="fas fa-spinner fa-spin"></i>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-
 <script src="js/common.js"></script>
 <script src="js/excel.js"></script>
-<script src="js/label.js"></script>
 <script src="js/manual_tx.js"></script>
+<script src="js/label.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>

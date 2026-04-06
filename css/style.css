@@ -1869,3 +1869,383 @@ textarea.form-control{
     margin-left:240px!important;
   }
 }
+/* =========================================================
+   대시보드 전용 초압축 레이아웃
+   style.css 맨 아래에 추가
+========================================================= */
+
+.dashboard-page{
+  padding:10px 12px 12px !important;
+}
+
+.dashboard-topbar{
+  min-height:50px;
+  height:50px;
+  padding:0 14px !important;
+}
+
+.dashboard-scan-btn{
+  padding:7px 12px !important;
+  font-size:.82rem !important;
+}
+
+.dashboard-stats-grid{
+  gap:10px !important;
+  margin-bottom:10px !important;
+}
+
+.dashboard-stat-card{
+  min-height:78px !important;
+  padding:10px 14px !important;
+  gap:12px !important;
+  border-radius:12px;
+}
+
+.dashboard-stat-card .stat-icon{
+  width:42px !important;
+  height:42px !important;
+  font-size:1.1rem !important;
+  border-radius:12px !important;
+}
+
+.dashboard-stat-card .stat-info h3{
+  font-size:1.15rem !important;
+  line-height:1.05 !important;
+  margin:0 !important;
+}
+
+.dashboard-stat-card .stat-info p{
+  font-size:.73rem !important;
+  margin-top:2px !important;
+  line-height:1.2 !important;
+}
+
+.dashboard-quick-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.dashboard-action-btn{
+  padding:7px 10px !important;
+  font-size:.78rem !important;
+  border-radius:9px !important;
+}
+
+.dashboard-grid-tight{
+  gap:10px !important;
+  margin-bottom:10px !important;
+  align-items:stretch;
+}
+
+.dashboard-bottom-grid{
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:10px;
+  align-items:start;
+}
+
+.dashboard-card{
+  margin-bottom:0 !important;
+  border-radius:12px !important;
+}
+
+.dashboard-card-fill{
+  min-height:290px;
+}
+
+.dashboard-card-header{
+  padding:10px 14px !important;
+  min-height:44px;
+}
+
+.dashboard-card-header h2{
+  font-size:.9rem !important;
+  line-height:1.2 !important;
+}
+
+.dashboard-card-body{
+  padding:10px 12px !important;
+}
+
+.dashboard-alert-list,
+.dashboard-transaction-list{
+  gap:8px !important;
+}
+
+.dashboard-alert-list .alert-item{
+  padding:9px 10px !important;
+  border-radius:10px !important;
+}
+
+.dashboard-alert-list .alert-info h4{
+  font-size:.83rem !important;
+}
+
+.dashboard-alert-list .alert-info p{
+  font-size:.72rem !important;
+  margin-top:1px !important;
+  line-height:1.2 !important;
+}
+
+.dashboard-alert-list .alert-stock .current{
+  font-size:.9rem !important;
+}
+
+.dashboard-alert-list .alert-stock .min{
+  font-size:.7rem !important;
+}
+
+.dashboard-transaction-list .tx-item{
+  padding:8px 10px !important;
+  gap:9px !important;
+  border-radius:10px !important;
+}
+
+.dashboard-transaction-list .tx-badge{
+  width:30px !important;
+  height:30px !important;
+  font-size:.78rem !important;
+}
+
+.dashboard-transaction-list .tx-info h4{
+  font-size:.84rem !important;
+  margin-bottom:1px !important;
+  line-height:1.2 !important;
+}
+
+.dashboard-transaction-list .tx-info p{
+  font-size:.71rem !important;
+  line-height:1.2 !important;
+}
+
+.dashboard-transaction-list .tx-qty{
+  font-size:.82rem !important;
+}
+
+.dashboard-top10-body{
+  min-height:290px;
+}
+
+.dashboard-stock-header{
+  align-items:flex-start !important;
+}
+
+.dashboard-stock-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.dashboard-search-input{
+  min-width:220px;
+  padding:7px 10px !important;
+  font-size:.78rem !important;
+}
+
+.dashboard-stock-actions .filter-select{
+  padding:7px 10px !important;
+  font-size:.78rem !important;
+}
+
+.dashboard-maker-tabs{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+
+.dashboard-maker-tabs .maker-tab{
+  padding:5px 10px !important;
+  font-size:.73rem !important;
+  border-radius:999px !important;
+}
+
+.dashboard-table-wrap{
+  overflow-x:auto;
+}
+
+.dashboard-table{
+  min-width:820px;
+  font-size:.78rem !important;
+}
+
+.dashboard-table th{
+  padding:8px 10px !important;
+  font-size:.7rem !important;
+}
+
+.dashboard-table td{
+  padding:8px 10px !important;
+  font-size:.77rem !important;
+}
+
+.dashboard-table .status-badge{
+  padding:3px 8px !important;
+  font-size:.7rem !important;
+}
+
+.dashboard-card .empty-state{
+  padding:20px 10px !important;
+}
+
+.dashboard-card .empty-state i{
+  font-size:1.8rem !important;
+  margin-bottom:8px !important;
+}
+
+.dashboard-card .empty-state p{
+  font-size:.82rem !important;
+}
+
+#top10List .loading-spinner,
+#lowStockList .loading-spinner,
+#recentTransactions .loading-spinner,
+#dashboardTableBody .loading-spinner{
+  padding:24px 10px !important;
+  font-size:.82rem !important;
+}
+
+/* 1500 이하 */
+@media (max-width:1500px){
+  .dashboard-bottom-grid{
+    grid-template-columns:320px 1fr;
+  }
+
+  .dashboard-search-input{
+    min-width:180px;
+  }
+}
+
+/* 1280 이하 */
+@media (max-width:1280px){
+  .dashboard-bottom-grid{
+    grid-template-columns:1fr;
+  }
+
+  .dashboard-card-fill,
+  .dashboard-top10-body{
+    min-height:auto;
+  }
+}
+
+/* 태블릿 */
+@media (max-width:900px){
+  .dashboard-stats-grid{
+    grid-template-columns:repeat(2, 1fr) !important;
+  }
+
+  .dashboard-grid-tight{
+    grid-template-columns:1fr !important;
+  }
+
+  .dashboard-stock-actions{
+    width:100%;
+  }
+}
+
+/* 모바일 */
+@media (max-width:768px){
+  .dashboard-page{
+    padding:10px !important;
+  }
+
+  .dashboard-topbar{
+    height:auto !important;
+    min-height:54px !important;
+    padding:10px 12px !important;
+  }
+
+  .dashboard-scan-btn{
+    width:auto !important;
+    padding:7px 10px !important;
+    font-size:.76rem !important;
+  }
+
+  .dashboard-stats-grid{
+    gap:8px !important;
+    margin-bottom:8px !important;
+  }
+
+  .dashboard-stat-card{
+    min-height:72px !important;
+    padding:9px 10px !important;
+    gap:8px !important;
+  }
+
+  .dashboard-stat-card .stat-icon{
+    width:36px !important;
+    height:36px !important;
+    font-size:1rem !important;
+  }
+
+  .dashboard-stat-card .stat-info h3{
+    font-size:1rem !important;
+  }
+
+  .dashboard-stat-card .stat-info p{
+    font-size:.68rem !important;
+  }
+
+  .dashboard-quick-actions{
+    gap:6px !important;
+    margin-bottom:8px !important;
+  }
+
+  .dashboard-action-btn{
+    flex:1 1 calc(50% - 6px);
+    justify-content:center;
+    font-size:.74rem !important;
+    padding:8px 8px !important;
+  }
+
+  .dashboard-grid-tight,
+  .dashboard-bottom-grid{
+    gap:8px !important;
+  }
+
+  .dashboard-card-header{
+    padding:9px 12px !important;
+  }
+
+  .dashboard-card-body{
+    padding:9px 10px !important;
+  }
+
+  .dashboard-stock-actions{
+    flex-direction:column;
+    align-items:stretch;
+    width:100%;
+  }
+
+  .dashboard-search-input,
+  .dashboard-stock-actions .filter-select{
+    width:100%;
+    min-width:0;
+  }
+}
+
+/* 아주 작은 모바일 */
+@media (max-width:480px){
+  .dashboard-stats-grid{
+    grid-template-columns:repeat(2, 1fr) !important;
+  }
+
+  .dashboard-action-btn{
+    flex:1 1 100%;
+  }
+
+  .dashboard-stat-card{
+    min-height:68px !important;
+  }
+
+  .dashboard-stat-card .stat-info h3{
+    font-size:.95rem !important;
+  }
+
+  .dashboard-stat-card .stat-info p{
+    font-size:.65rem !important;
+  }
+}
