@@ -7,9 +7,137 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .inventory-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .inventory-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .inventory-title-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .inventory-title-left h2 {
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .manufacturer-tabs,
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .maker-tab,
+    .subcat-tab {
+      border: 1px solid var(--gray-300);
+      background: #fff;
+      color: var(--gray-700, #495057);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s ease;
+      white-space: nowrap;
+    }
+
+    .maker-tab:hover,
+    .subcat-tab:hover {
+      border-color: var(--secondary);
+      color: var(--secondary);
+      background: #f8fbff;
+    }
+
+    .maker-tab.active,
+    .subcat-tab.active {
+      background: var(--secondary);
+      color: #fff;
+      border-color: var(--secondary);
+      box-shadow: 0 4px 10px rgba(33, 150, 243, 0.18);
+    }
+
+    .inventory-subfilter-wrap {
+      padding: 14px 20px 0 20px;
+      border-top: 1px solid var(--gray-200);
+      background: #fff;
+    }
+
+    .inventory-subfilter-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      background: #f8f9fa;
+      border: 1px solid #eef1f4;
+      border-radius: 12px;
+    }
+
+    .inventory-subfilter-label {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    .sortable-th {
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .sortable-th .th-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sort-icon {
+      font-size: 12px;
+      color: #9aa4b2;
+    }
+
+    .sort-icon.active {
+      color: #1565c0;
+    }
+
+    @media (max-width: 768px) {
+      .inventory-title-row {
+        align-items: flex-start;
+      }
+
+      .inventory-title-left {
+        width: 100%;
+      }
+
+      .inventory-toolbar {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <div class="logo"><i class="fas fa-microchip"></i><span class="logo-text">PLC 재고관리</span></div>
@@ -26,55 +154,108 @@
   </ul>
   <div class="sidebar-footer"><span>v1.0.0</span></div>
 </nav>
+
 <main class="main-content" id="mainContent">
   <header class="topbar">
-    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-    <div class="topbar-title"><h1><i class="fas fa-clipboard-list"></i> 재고 현황</h1></div>
-    <div class="topbar-actions"><span class="date-badge" id="currentDate"></span></div>
+    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="topbar-title">
+      <h1><i class="fas fa-clipboard-list"></i> 재고 현황</h1>
+    </div>
+    <div class="topbar-actions">
+      <span class="date-badge" id="currentDate"></span>
+    </div>
   </header>
+
   <div class="content-area">
     <div class="card">
       <div class="card-header">
-        <h2><i class="fas fa-clipboard-list"></i> 재고 현황</h2>
-        <div class="card-actions">
-  <input type="text" id="searchInput" placeholder="자재명 / 자재코드 / 카테고리 / 위치 검색..." class="search-input">
+        <div class="inventory-title-row">
+          <div class="inventory-title-left">
+            <h2><i class="fas fa-clipboard-list"></i> 재고 현황</h2>
 
-  <select id="filterStatus" class="filter-select">
-    <option value="">전체 상태</option>
-    <option value="ok">정상</option>
-    <option value="low">부족</option>
-    <option value="critical">없음</option>
-  </select>
+            <div id="manufacturerTabs" class="manufacturer-tabs">
+              <button type="button" class="maker-tab active" onclick="setManufacturerFilter('')">전체</button>
+            </div>
+          </div>
 
-  <select id="sortBy" class="filter-select">
-    <option value="name">정렬: 자재명</option>
-    <option value="code">정렬: 자재코드</option>
-    <option value="category">정렬: 카테고리</option>
-    <option value="location">정렬: 위치</option>
-    <option value="stock">정렬: 현재고</option>
-    <option value="min_stock">정렬: 최소재고</option>
-    <option value="updated">정렬: 최근 입출고</option>
-    <option value="status">정렬: 상태</option>
-  </select>
+          <div class="inventory-toolbar">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="자재명 / 자재코드 / 카테고리 / 위치 검색..."
+              class="search-input"
+            >
 
-  <select id="sortOrder" class="filter-select">
-    <option value="asc">오름차순</option>
-    <option value="desc">내림차순</option>
-  </select>
+            <select id="filterStatus" class="filter-select">
+              <option value="">전체 상태</option>
+              <option value="ok">정상</option>
+              <option value="low">부족</option>
+              <option value="critical">없음</option>
+            </select>
 
-  <button class="btn btn-outline btn-sm" onclick="loadInventory()">
-    <i class="fas fa-sync"></i>
-  </button>
-</div>
+            <select id="sortBy" class="filter-select">
+              <option value="name">정렬: 자재명</option>
+              <option value="category">정렬: 카테고리</option>
+              <option value="status">정렬: 상태</option>
+              <option value="updated">정렬: 최근 입출고</option>
+              <option value="code">정렬: 자재코드</option>
+              <option value="stock">정렬: 현재고</option>
+              <option value="min_stock">정렬: 최소재고</option>
+            </select>
+
+            <select id="sortOrder" class="filter-select">
+              <option value="asc">오름차순</option>
+              <option value="desc">내림차순</option>
+            </select>
+
+            <button class="btn btn-outline btn-sm" onclick="loadInventory()">
+              <i class="fas fa-sync"></i>
+            </button>
+          </div>
+        </div>
       </div>
+
+      <div class="inventory-subfilter-wrap">
+        <div class="inventory-subfilter-box">
+          <span class="inventory-subfilter-label">
+            <i class="fas fa-layer-group"></i> 대분류
+          </span>
+          <div id="mainCategoryTabs" class="category-tabs">
+            <button type="button" class="subcat-tab active" onclick="setMainCategoryFilter('')">전체</button>
+          </div>
+        </div>
+      </div>
+
       <div class="card-body" style="padding:0">
         <div class="table-responsive">
           <table class="data-table">
             <thead>
-              <tr><th>자재코드</th><th>자재명</th><th>카테고리</th><th>위치</th><th>현재고</th><th>최소재고</th><th>상태</th><th>최근 입출고</th></tr>
+              <tr id="inventoryHeadRow">
+                <th>자재코드</th>
+                <th class="sortable-th" onclick="setHeaderSort('name')">
+                  <span class="th-inner">자재명 <span id="sortIcon-name"></span></span>
+                </th>
+                <th class="sortable-th" onclick="setHeaderSort('category')">
+                  <span class="th-inner">카테고리 <span id="sortIcon-category"></span></span>
+                </th>
+                <th>현재고</th>
+                <th>최소재고</th>
+                <th class="sortable-th" onclick="setHeaderSort('status')">
+                  <span class="th-inner">상태 <span id="sortIcon-status"></span></span>
+                </th>
+                <th class="sortable-th" onclick="setHeaderSort('updated')">
+                  <span class="th-inner">최근 입출고 <span id="sortIcon-updated"></span></span>
+                </th>
+              </tr>
             </thead>
             <tbody id="inventoryBody">
-              <tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i></td></tr>
+              <tr>
+                <td colspan="7" class="text-center">
+                  <i class="fas fa-spinner fa-spin"></i>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -82,6 +263,7 @@
     </div>
   </div>
 </main>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/common.js"></script>
 <script src="js/inventory.js"></script>
