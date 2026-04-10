@@ -39,39 +39,34 @@ async function loadManufacturerMap() {
         const maker = (l1.name || '').trim();
         if (!maker) return;
 
-        manufacturerMap[maker] = maker;
-
-        (l1.children || []).forEach(l2 => {
-          const l2Name = (l2.name || '').trim();
-          if (l2Name) manufacturerMap[l2Name] = maker;
-
-          (l2.children || []).forEach(l3 => {
-            const l3Name = (l3.name || '').trim();
-            if (l3Name) manufacturerMap[l3Name] = maker;
-          });
-        });
+        // 제조사(대분류)만 매핑해서 하위 분류명이 서로 덮어쓰지 않도록 처리
+        manufacturerMap[maker.toLowerCase()] = maker;
       });
   } catch (e) {
     manufacturerMap = {};
   }
 }
 
-function getManufacturerName(material) {
-  const category = (material?.category || '').trim();
-  if (!category) return '미분류';
-
-  if (manufacturerMap[category]) return manufacturerMap[category];
-
-  const tokens = category
+function normalizeCategoryTokens(category) {
+  return String(category || '')
     .split(/[>\-|/]/)
     .map(v => v.trim())
     .filter(Boolean);
+}
+
+function getManufacturerName(material) {
+  const tokens = normalizeCategoryTokens(material?.category || '');
+  if (!tokens.length) return '미분류';
+
+  const firstKey = tokens[0].toLowerCase();
+  if (manufacturerMap[firstKey]) return manufacturerMap[firstKey];
 
   for (const token of tokens) {
-    if (manufacturerMap[token]) return manufacturerMap[token];
+    const key = token.toLowerCase();
+    if (manufacturerMap[key]) return manufacturerMap[key];
   }
 
-  return '미분류';
+  return tokens[0] || '미분류';
 }
 
 function renderManufacturerTabs() {
@@ -102,6 +97,7 @@ function setManufacturerFilter(maker) {
   renderManufacturerTabs();
   applyFilter();
 }
+
 function setHeaderSort(key) {
   if (headerSortState.key === key) {
     headerSortState.order = headerSortState.order === 'asc' ? 'desc' : 'asc';
@@ -144,6 +140,7 @@ function getStatusRank(material) {
   if (st === 'low') return 1;
   return 2;
 }
+
 /* ─────────────────────────────────────────
    자재 목록
 ───────────────────────────────────────── */
@@ -222,7 +219,7 @@ function applyFilter() {
     );
   }
 
-  if (cat) list = list.filter(m => (m.category || '').includes(cat));
+  if (cat) list = list.filter(m => (m.category || '').trim() === cat.trim());
   if (st) list = list.filter(m => getStockStatus(m) === st);
 
   list.sort((a, b) => {
@@ -297,7 +294,7 @@ function renderTable(list) {
   const countEl = document.getElementById('totalCount');
   if (!tbody) return;
 
-    const theadRow = document.querySelector('.table thead tr');
+  const theadRow = document.querySelector('.table thead tr');
   if (theadRow) {
     theadRow.innerHTML = `
       <th style="width:44px;text-align:center">
@@ -445,12 +442,32 @@ async function loadBulkManagerOptions() {
 
   try {
     const handlers = await HandlerAPI.getAll();
+    const activeHandlers = (handlers || []).filter(h => h.active !== false);
+
     sel.innerHTML = '<option value="">-- 선택 --</option>' +
-      handlers.map(h => `<option value="${esc(h.name)}">${esc(h.name)}</option>`).join('');
-  } catch (_) {}
+      activeHandlers.map(h =>
+        `<option value="${esc(h.name)}">${esc(h.name)}${h.department ? ' (' + esc(h.department) + ')' : ''}</option>`
+      ).join('');
+  } catch (_) {
+    sel.innerHTML = '<option value="">-- 선택 --</option>';
+  }
 }
 
-function openBulkEditModal() {
+async function loadBulkCategoryOptions() {
+  const sel = document.getElementById('bulkCategory');
+  if (!sel) return;
+
+  const categories = [...new Set((allMaterials || [])
+    .map(m => (m.category || '').trim())
+    .filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'ko'));
+
+  sel.innerHTML =
+    '<option value="">-- 선택 --</option>' +
+    categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+}
+
+async function openBulkEditModal() {
   if (!selectedMaterialIds.size) {
     return showToast('수정할 자재를 먼저 선택하세요.', 'warning');
   }
@@ -467,6 +484,9 @@ function openBulkEditModal() {
   document.getElementById('bulkLocation').value = '';
   document.getElementById('bulkMinStock').value = '';
   document.getElementById('bulkDescription').value = '';
+
+  await loadBulkManagerOptions();
+  await loadBulkCategoryOptions();
 
   openOverlay('bulkEditModal');
 }
@@ -561,12 +581,14 @@ async function loadCatTree() {
       l1Sel.appendChild(o);
     });
 
-    document.getElementById('catL2').innerHTML = '<option value="">중분류</option>';
+    document.getElementById('catL2').innerHTML = '<option value="">중분류 선택</option>';
     document.getElementById('catL2').disabled = true;
-    document.getElementById('catL3').innerHTML = '<option value="">소분류</option>';
+
+    document.getElementById('catL3').innerHTML = '<option value="">소분류 선택</option>';
     document.getElementById('catL3').disabled = true;
-    document.getElementById('matCategory').value = '';
-  } catch (_) {}
+  } catch (e) {
+    console.error('카테고리 로드 오류', e);
+  }
 }
 
 function onCatL1Change() {
@@ -575,18 +597,15 @@ function onCatL1Change() {
   const l3Sel = document.getElementById('catL3');
 
   l2Sel.innerHTML = '<option value="">중분류 선택</option>';
-  l3Sel.innerHTML = '<option value="">소분류</option>';
+  l3Sel.innerHTML = '<option value="">소분류 선택</option>';
+  l2Sel.disabled = true;
   l3Sel.disabled = true;
   document.getElementById('matCategory').value = '';
 
-  if (!l1Id) {
-    l2Sel.disabled = true;
-    return;
-  }
+  if (!l1Id) return;
 
   const l1Node = catTree.find(x => x.id === l1Id);
   if (!l1Node?.children?.length) {
-    l2Sel.disabled = true;
     document.getElementById('matCategory').value = l1Node?.name || '';
     return;
   }
