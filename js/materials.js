@@ -9,6 +9,7 @@ let editingId = null;
 let catTree = [];
 let manufacturerMap = {};
 let manufacturerList = [];
+let manufacturerCategoryMap = {};
 let selectedManufacturer = '';
 let headerSortState = {
   key: '',
@@ -42,15 +43,25 @@ function normalizeCategoryTokens(category) {
     .filter(Boolean);
 }
 
+function collectCategoryNames(node, bucket) {
+  if (!node) return;
+  const name = (node.name || '').trim();
+  if (name) bucket.add(name);
+
+  (node.children || []).forEach(child => collectCategoryNames(child, bucket));
+}
+
 /* ─────────────────────────────────────────
    제조사 매핑 / 버튼
 ───────────────────────────────────────── */
 async function loadManufacturerMap() {
   try {
     const tree = await CategoryAPI.getTree();
+    catTree = Array.isArray(tree) ? tree : [];
+
     manufacturerMap = {};
     manufacturerList = [];
-    catTree = Array.isArray(tree) ? tree : [];
+    manufacturerCategoryMap = {};
 
     catTree
       .sort((a, b) => (a.name || '').localeCompare((b.name || ''), 'ko'))
@@ -58,32 +69,64 @@ async function loadManufacturerMap() {
         const maker = (l1.name || '').trim();
         if (!maker) return;
 
-        // 대분류(제조사)만 매핑
         manufacturerMap[maker.toLowerCase()] = maker;
         manufacturerList.push(maker);
+
+        const bucket = new Set();
+        collectCategoryNames(l1, bucket);
+        manufacturerCategoryMap[maker] = bucket;
       });
   } catch (e) {
+    catTree = [];
     manufacturerMap = {};
     manufacturerList = [];
+    manufacturerCategoryMap = {};
   }
 }
 
 function getManufacturerName(material) {
-  const tokens = normalizeCategoryTokens(material?.category || '');
+  const category = (material?.category || '').trim();
+  const tokens = normalizeCategoryTokens(category);
+
   if (!tokens.length) return '미분류';
 
-  // 1순위: 첫 토큰이 제조사면 그대로 사용
+  // 1순위: 첫 토큰이 제조사명과 직접 일치
   const firstKey = tokens[0].toLowerCase();
-  if (manufacturerMap[firstKey]) return manufacturerMap[firstKey];
-
-  // 2순위: 전체 토큰 중 제조사와 정확히 일치하는 값 찾기
-  for (const token of tokens) {
-    const key = token.toLowerCase();
-    if (manufacturerMap[key]) return manufacturerMap[key];
+  if (manufacturerMap[firstKey]) {
+    return manufacturerMap[firstKey];
   }
 
-  // 못 찾으면 미분류
+  // 2순위: 각 제조사의 하위 카테고리 집합에 현재 category 또는 token이 포함되면 해당 제조사
+  for (const maker of manufacturerList) {
+    const bucket = manufacturerCategoryMap[maker];
+    if (!bucket) continue;
+
+    if (bucket.has(category)) return maker;
+    for (const token of tokens) {
+      if (bucket.has(token)) return maker;
+    }
+  }
+
   return '미분류';
+}
+
+function isMaterialInManufacturer(material, maker) {
+  if (!maker) return true;
+  if (maker === '미분류') return getManufacturerName(material) === '미분류';
+
+  const category = (material?.category || '').trim();
+  const tokens = normalizeCategoryTokens(category);
+  const bucket = manufacturerCategoryMap[maker];
+
+  if (!bucket) return false;
+  if (!category && maker !== '미분류') return false;
+
+  if (bucket.has(category)) return true;
+  for (const token of tokens) {
+    if (bucket.has(token)) return true;
+  }
+
+  return false;
 }
 
 function renderManufacturerTabs() {
@@ -231,7 +274,7 @@ function applyFilter() {
   let list = [...allMaterials];
 
   if (selectedManufacturer) {
-    list = list.filter(m => getManufacturerName(m) === selectedManufacturer);
+    list = list.filter(m => isMaterialInManufacturer(m, selectedManufacturer));
   }
 
   if (kw) {
