@@ -8,6 +8,7 @@ let selectedMaterialIds = new Set();
 let editingId = null;
 let catTree = [];
 let manufacturerMap = {};
+let manufacturerList = [];
 let selectedManufacturer = '';
 let headerSortState = {
   key: '',
@@ -26,25 +27,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ─────────────────────────────────────────
-   제조사 매핑 / 버튼
+   공통 유틸
 ───────────────────────────────────────── */
-async function loadManufacturerMap() {
-  try {
-    const tree = await CategoryAPI.getTree();
-    manufacturerMap = {};
-
-    (tree || [])
-      .sort((a, b) => (a.name || '').localeCompare((b.name || ''), 'ko'))
-      .forEach(l1 => {
-        const maker = (l1.name || '').trim();
-        if (!maker) return;
-
-        // 제조사(대분류)만 매핑해서 하위 분류명이 서로 덮어쓰지 않도록 처리
-        manufacturerMap[maker.toLowerCase()] = maker;
-      });
-  } catch (e) {
-    manufacturerMap = {};
-  }
+function escapeForSingleQuote(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
 }
 
 function normalizeCategoryTokens(category) {
@@ -54,27 +42,56 @@ function normalizeCategoryTokens(category) {
     .filter(Boolean);
 }
 
+/* ─────────────────────────────────────────
+   제조사 매핑 / 버튼
+───────────────────────────────────────── */
+async function loadManufacturerMap() {
+  try {
+    const tree = await CategoryAPI.getTree();
+    manufacturerMap = {};
+    manufacturerList = [];
+    catTree = Array.isArray(tree) ? tree : [];
+
+    catTree
+      .sort((a, b) => (a.name || '').localeCompare((b.name || ''), 'ko'))
+      .forEach(l1 => {
+        const maker = (l1.name || '').trim();
+        if (!maker) return;
+
+        // 대분류(제조사)만 매핑
+        manufacturerMap[maker.toLowerCase()] = maker;
+        manufacturerList.push(maker);
+      });
+  } catch (e) {
+    manufacturerMap = {};
+    manufacturerList = [];
+  }
+}
+
 function getManufacturerName(material) {
   const tokens = normalizeCategoryTokens(material?.category || '');
   if (!tokens.length) return '미분류';
 
+  // 1순위: 첫 토큰이 제조사면 그대로 사용
   const firstKey = tokens[0].toLowerCase();
   if (manufacturerMap[firstKey]) return manufacturerMap[firstKey];
 
+  // 2순위: 전체 토큰 중 제조사와 정확히 일치하는 값 찾기
   for (const token of tokens) {
     const key = token.toLowerCase();
     if (manufacturerMap[key]) return manufacturerMap[key];
   }
 
-  return tokens[0] || '미분류';
+  // 못 찾으면 미분류
+  return '미분류';
 }
 
 function renderManufacturerTabs() {
   const wrap = document.getElementById('manufacturerTabs');
   if (!wrap) return;
 
-  const makers = [...new Set(allMaterials.map(getManufacturerName).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'ko'));
+  const hasUncategorized = allMaterials.some(m => getManufacturerName(m) === '미분류');
+  const makers = [...manufacturerList].sort((a, b) => a.localeCompare(b, 'ko'));
 
   wrap.innerHTML = `
     <button
@@ -82,11 +99,20 @@ function renderManufacturerTabs() {
       class="maker-tab ${selectedManufacturer === '' ? 'active' : ''}"
       onclick="setManufacturerFilter('')"
     >전체</button>
+
+    ${hasUncategorized ? `
+      <button
+        type="button"
+        class="maker-tab ${selectedManufacturer === '미분류' ? 'active' : ''}"
+        onclick="setManufacturerFilter('미분류')"
+      >미분류</button>
+    ` : ''}
+
     ${makers.map(maker => `
       <button
         type="button"
         class="maker-tab ${selectedManufacturer === maker ? 'active' : ''}"
-        onclick="setManufacturerFilter('${esc(maker)}')"
+        onclick="setManufacturerFilter('${escapeForSingleQuote(maker)}')"
       >${esc(maker)}</button>
     `).join('')}
   `;
@@ -172,12 +198,12 @@ async function loadMaterials() {
   }
 }
 
-/* ── 카테고리 필터 옵션 (알파벳/가나다 정렬) ── */
+/* ── 카테고리 필터 옵션 ── */
 async function populateFilterCategory() {
   const sel = document.getElementById('filterCategory');
   if (!sel) return;
 
-  const cats = [...new Set(allMaterials.map(m => m.category).filter(Boolean))]
+  const cats = [...new Set(allMaterials.map(m => (m.category || '').trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'ko'));
 
   sel.innerHTML = '<option value="">전체 카테고리</option>';
@@ -219,8 +245,13 @@ function applyFilter() {
     );
   }
 
-  if (cat) list = list.filter(m => (m.category || '').trim() === cat.trim());
-  if (st) list = list.filter(m => getStockStatus(m) === st);
+  if (cat) {
+    list = list.filter(m => (m.category || '').trim() === cat.trim());
+  }
+
+  if (st) {
+    list = list.filter(m => getStockStatus(m) === st);
+  }
 
   list.sort((a, b) => {
     let av = '';
